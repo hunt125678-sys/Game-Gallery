@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Two-Player Racing - Hunter's Arcade</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #07111f;
+            color: rgb(226, 20, 20);
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 18px 0 5px;
+            color: #60a5fa;
+            text-shadow: 0 0 15px #2563eb;
+        }
+
+        #stats {
+            margin: 10px;
+            font-size: 18px;
+        }
+
+        .player-one {
+            color: #38bdf8;
+        }
+
+        .player-two {
+            color: #f87171;
+        }
+
+        canvas {
+            display: block;
+            margin: 12px auto;
+            max-width: 95%;
+            background: #222;
+            border: 3px solid #2563eb;
+            border-radius: 10px;
+            box-shadow: 0 0 25px #2563eb66;
+        }
+
+        #message {
+            min-height: 35px;
+            margin: 10px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        button {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: white;
+            border: none;
+            border-radius: 9px;
+            padding: 12px 20px;
+            margin: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #3b82f6;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>TWO-PLAYER TRAFFIC RACE</h1>
+
+    <div id="stats">
+        <span class="player-one">
+            Player 1: <span id="p1Distance">0</span> m
+            | Lives: <span id="p1Lives">3</span>
+        </span>
+
+        &nbsp;&nbsp;&nbsp;
+
+        <span class="player-two">
+            Player 2: <span id="p2Distance">0</span> m
+            | Lives: <span id="p2Lives">3</span>
+        </span>
+    </div>
+
+    <p>
+        Player 1: A / D
+        &nbsp; | &nbsp;
+        Player 2: ← / →
+        &nbsp; | &nbsp;
+        First to 3,000 meters wins!
+    </p>
+
+    <canvas id="game" width="900" height="550"></canvas>
+
+    <div id="message"></div>
+
+    <button onclick="restartGame()">Restart Race</button>
+
+    <button onclick="window.location.href='index.html'">
+        Back to Arcade
+    </button>
+
+    <script>
+        const canvas = document.getElementById("game");
+        const ctx = canvas.getContext("2d");
+
+        const FINISH_DISTANCE = 3000;
+
+        let keys = {};
+        let traffic = [];
+        let roadLines = [];
+        let particles = [];
+
+        let gameRunning = true;
+        let raceSpeed = 5;
+        let spawnTimer = 0;
+
+        const leftRoad = {
+            x: 60,
+            width: 350
+        };
+
+        const rightRoad = {
+            x: 490,
+            width: 350
+        };
+
+        const player1 = {
+            x: 205,
+            y: 440,
+            width: 42,
+            height: 75,
+            color: "#38bdf8",
+            speed: 6,
+            distance: 0,
+            lives: 3,
+            invincible: false,
+            dead: false
+        };
+
+        const player2 = {
+            x: 645,
+            y: 440,
+            width: 42,
+            height: 75,
+            color: "#ef4444",
+            speed: 6,
+            distance: 0,
+            lives: 3,
+            invincible: false,
+            dead: false
+        };
+
+
+        /* -------------------------
+           KEYBOARD
+        ------------------------- */
+
+        document.addEventListener("keydown", function(event) {
+
+            keys[event.key.toLowerCase()] = true;
+
+            if (
+                event.key === "ArrowLeft" ||
+                event.key === "ArrowRight"
+            ) {
+                event.preventDefault();
+            }
+
+        });
+
+
+        document.addEventListener("keyup", function(event) {
+
+            keys[event.key.toLowerCase()] = false;
+
+        });
+
+
+        /* -------------------------
+           ROAD LINES
+        ------------------------- */
+
+        function createRoadLines() {
+
+            roadLines = [];
+
+            for (let y = -80; y < canvas.height; y += 100) {
+
+                roadLines.push({
+                    y: y
+                });
+
+            }
+
+        }
+
+
+        function updateRoadLines() {
+
+            for (let line of roadLines) {
+
+                line.y += raceSpeed;
+
+                if (line.y > canvas.height) {
+                    line.y = -80;
+                }
+
+            }
+
+        }
+
+
+        /* -------------------------
+           PLAYER MOVEMENT
+        ------------------------- */
+
+        function movePlayers() {
+
+            if (!player1.dead) {
+
+                if (keys["a"]) {
+                    player1.x -= player1.speed;
+                }
+
+                if (keys["d"]) {
+                    player1.x += player1.speed;
+                }
+
+                keepOnRoad(player1, leftRoad);
+
+                player1.distance += raceSpeed * 0.07;
+            }
+
+
+            if (!player2.dead) {
+
+                if (keys["arrowleft"]) {
+                    player2.x -= player2.speed;
+                }
+
+                if (keys["arrowright"]) {
+                    player2.x += player2.speed;
+                }
+
+                keepOnRoad(player2, rightRoad);
+
+                player2.distance += raceSpeed * 0.07;
+            }
+
+        }
+
+
+        function keepOnRoad(player, road) {
+
+            const leftEdge = road.x + 12;
+            const rightEdge =
+                road.x + road.width -
+                player.width - 12;
+
+            if (player.x < leftEdge) {
+                player.x = leftEdge;
+            }
+
+            if (player.x > rightEdge) {
+                player.x = rightEdge;
+            }
+
+        }
+
+
+        /* -------------------------
+           TRAFFIC
+        ------------------------- */
+
+        function spawnTraffic() {
+
+            spawnTimer++;
+
+            const spawnDelay =
+                Math.max(38, 85 - raceSpeed * 4);
+
+            if (spawnTimer < spawnDelay) {
+                return;
+            }
+
+            spawnTimer = 0;
+
+            spawnTrafficCar(leftRoad, 1);
+            spawnTrafficCar(rightRoad, 2);
+
+        }
+
+
+        function spawnTrafficCar(road, side) {
+
+            const lanes = 3;
+            const laneWidth = road.width / lanes;
+
+            const lane =
+                Math.floor(Math.random() * lanes);
+
+            const carWidth = 40;
+            const carHeight = 70;
+
+            const colors = [
+                "#facc15",
+                "#a855f7",
+                "#22c55e",
+                "#f97316",
+                "#e5e7eb",
+                "#ec4899"
+            ];
+
+            traffic.push({
+                x:
+                    road.x +
+                    lane * laneWidth +
+                    laneWidth / 2 -
+                    carWidth / 2,
+
+                y: -carHeight - Math.random() * 200,
+
+                width: carWidth,
+                height: carHeight,
+
+                side: side,
+
+                speed:
+                    raceSpeed +
+                    Math.random() * 2,
+
+                color:
+                    colors[
+                        Math.floor(
+                            Math.random() *
+                            colors.length
+                        )
+                    ]
+            });
+
+        }
+
+
+        function updateTraffic() {
+
+            for (let car of traffic) {
+
+                car.y += car.speed;
+
+            }
+
+            traffic = traffic.filter(function(car) {
+                return car.y < canvas.height + 100;
+            });
+
+        }
+
+
+        /* -------------------------
+           COLLISIONS
+        ------------------------- */
+
+        function checkCollisions() {
+
+            for (let car of traffic) {
+
+                if (
+                    car.side === 1 &&
+                    !player1.dead &&
+                    !player1.invincible &&
+                    rectanglesTouch(player1, car)
+                ) {
+                    crashPlayer(player1);
+                }
+
+                if (
+                    car.side === 2 &&
+                    !player2.dead &&
+                    !player2.invincible &&
+                    rectanglesTouch(player2, car)
+                ) {
+                    crashPlayer(player2);
+                }
+
+            }
+
+        }
+
+
+        function rectanglesTouch(a, b) {
+
+            return (
+                a.x < b.x + b.width &&
+                a.x + a.width > b.x &&
+                a.y < b.y + b.height &&
+                a.y + a.height > b.y
+            );
+
+        }
+
+
+        function crashPlayer(player) {
+
+            player.lives--;
+
+            createCrashParticles(
+                player.x + player.width / 2,
+                player.y + player.height / 2,
+                player.color
+            );
+
+            updateUI();
+
+            if (player.lives <= 0) {
+
+                player.dead = true;
+
+                checkLastPlayer();
+
+                return;
+            }
+
+            player.invincible = true;
+
+            setTimeout(function() {
+                player.invincible = false;
+            }, 1500);
+
+        }
+
+
+        function checkLastPlayer() {
+
+            if (player1.dead && player2.dead) {
+                endRace("BOTH PLAYERS CRASHED!");
+            }
+
+            else if (player1.dead) {
+                endRace("PLAYER 2 WINS!");
+            }
+
+            else if (player2.dead) {
+                endRace("PLAYER 1 WINS!");
+            }
+
+        }
+
+
+        /* -------------------------
+           CRASH PARTICLES
+        ------------------------- */
+
+        function createCrashParticles(x, y, color) {
+
+            for (let i = 0; i < 25; i++) {
+
+                particles.push({
+                    x: x,
+                    y: y,
+
+                    vx:
+                        Math.random() * 8 - 4,
+
+                    vy:
+                        Math.random() * 8 - 4,
+
+                    size:
+                        Math.random() * 6 + 2,
+
+                    life: 35,
+
+                    color: color
+                });
+
+            }
+
+        }
+
+
+        function updateParticles() {
+
+            for (let particle of particles) {
+
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+
+                particle.vx *= 0.96;
+                particle.vy *= 0.96;
+
+                particle.life--;
+
+            }
+
+            particles = particles.filter(function(particle) {
+                return particle.life > 0;
+            });
+
+        }
+
+
+        /* -------------------------
+           DIFFICULTY AND WINNER
+        ------------------------- */
+
+        function updateDifficulty() {
+
+            const highestDistance =
+                Math.max(
+                    player1.distance,
+                    player2.distance
+                );
+
+            raceSpeed =
+                5 +
+                Math.min(
+                    highestDistance / 600,
+                    5
+                );
+
+        }
+
+
+        function checkWinner() {
+
+            if (
+                player1.distance >= FINISH_DISTANCE &&
+                player2.distance >= FINISH_DISTANCE
+            ) {
+
+                if (
+                    player1.distance >
+                    player2.distance
+                ) {
+                    endRace("PLAYER 1 WINS!");
+                }
+
+                else if (
+                    player2.distance >
+                    player1.distance
+                ) {
+                    endRace("PLAYER 2 WINS!");
+                }
+
+                else {
+                    endRace("IT'S A TIE!");
+                }
+
+            }
+
+            else if (
+                player1.distance >=
+                FINISH_DISTANCE
+            ) {
+                endRace("PLAYER 1 WINS!");
+            }
+
+            else if (
+                player2.distance >=
+                FINISH_DISTANCE
+            ) {
+                endRace("PLAYER 2 WINS!");
+            }
+
+        }
+
+
+        function endRace(message) {
+
+            gameRunning = false;
+
+            document.getElementById("message")
+                .textContent = message;
+
+        }
+
+
+        /* -------------------------
+           DRAWING
+        ------------------------- */
+
+        function draw() {
+
+            drawGrass();
+
+            drawRoad(leftRoad);
+            drawRoad(rightRoad);
+
+            drawCenterDivider();
+
+            drawProgressBars();
+
+            for (let car of traffic) {
+                drawCar(car);
+            }
+
+            drawPlayer(
+                player1,
+                "P1"
+            );
+
+            drawPlayer(
+                player2,
+                "P2"
+            );
+
+            drawParticles();
+
+        }
+
+
+        function drawGrass() {
+
+            ctx.fillStyle = "#166534";
+
+            ctx.fillRect(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+
+            ctx.fillStyle = "#15803d";
+
+            for (let y = 0; y < canvas.height; y += 60) {
+
+                ctx.fillRect(
+                    0,
+                    y,
+                    canvas.width,
+                    30
+                );
+
+            }
+
+        }
+
+
+        function drawRoad(road) {
+
+            ctx.fillStyle = "#27272a";
+
+            ctx.fillRect(
+                road.x,
+                0,
+                road.width,
+                canvas.height
+            );
+
+
+            /* Road edges */
+
+            ctx.fillStyle = "white";
+
+            ctx.fillRect(
+                road.x,
+                0,
+                6,
+                canvas.height
+            );
+
+            ctx.fillRect(
+                road.x + road.width - 6,
+                0,
+                6,
+                canvas.height
+            );
+
+
+            /* Lane markings */
+
+            const laneWidth = road.width / 3;
+
+            ctx.fillStyle = "#facc15";
+
+            for (let line of roadLines) {
+
+                ctx.fillRect(
+                    road.x + laneWidth - 3,
+                    line.y,
+                    6,
+                    55
+                );
+
+                ctx.fillRect(
+                    road.x + laneWidth * 2 - 3,
+                    line.y,
+                    6,
+                    55
+                );
+
+            }
+
+        }
+
+
+        function drawCenterDivider() {
+
+            ctx.fillStyle = "#0f172a";
+
+            ctx.fillRect(
+                410,
+                0,
+                80,
+                canvas.height
+            );
+
+            ctx.fillStyle = "#64748b";
+
+            ctx.fillRect(
+                446,
+                0,
+                8,
+                canvas.height
+            );
+
+            ctx.fillStyle = "white";
+
+            ctx.font = "bold 18px Arial";
+            ctx.textAlign = "center";
+
+            ctx.fillText(
+                "P1",
+                235,
+                30
+            );
+
+            ctx.fillText(
+                "P2",
+                665,
+                30
+            );
+
+        }
+
+
+        function drawCar(car) {
+
+            ctx.fillStyle = car.color;
+
+            ctx.fillRect(
+                car.x,
+                car.y,
+                car.width,
+                car.height
+            );
+
+
+            /* Windows */
+
+            ctx.fillStyle = "#93c5fd";
+
+            ctx.fillRect(
+                car.x + 7,
+                car.y + 12,
+                car.width - 14,
+                16
+            );
+
+
+            ctx.fillRect(
+                car.x + 7,
+                car.y + 42,
+                car.width - 14,
+                14
+            );
+
+
+            /* Wheels */
+
+            ctx.fillStyle = "#020617";
+
+            ctx.fillRect(
+                car.x - 4,
+                car.y + 10,
+                6,
+                16
+            );
+
+            ctx.fillRect(
+                car.x + car.width - 2,
+                car.y + 10,
+                6,
+                16
+            );
+
+            ctx.fillRect(
+                car.x - 4,
+                car.y + 47,
+                6,
+                16
+            );
+
+            ctx.fillRect(
+                car.x + car.width - 2,
+                car.y + 47,
+                6,
+                16
+            );
+
+        }
+
+
+        function drawPlayer(player, label) {
+
+            if (player.dead) {
+                return;
+            }
+
+            if (
+                player.invincible &&
+                Math.floor(Date.now() / 100) % 2 === 0
+            ) {
+                return;
+            }
+
+            drawCar(player);
+
+
+            ctx.fillStyle = "white";
+
+            ctx.font = "bold 14px Arial";
+
+            ctx.textAlign = "center";
+
+            ctx.fillText(
+                label,
+                player.x + player.width / 2,
+                player.y + 67
+            );
+
+        }
+
+
+        function drawParticles() {
+
+            for (let particle of particles) {
+
+                ctx.globalAlpha =
+                    particle.life / 35;
+
+                ctx.fillStyle =
+                    particle.color;
+
+                ctx.fillRect(
+                    particle.x,
+                    particle.y,
+                    particle.size,
+                    particle.size
+                );
+
+            }
+
+            ctx.globalAlpha = 1;
+
+        }
+
+
+        /* -------------------------
+           PROGRESS BARS
+        ------------------------- */
+
+        function drawProgressBars() {
+
+            const p1Progress =
+                Math.min(
+                    player1.distance /
+                    FINISH_DISTANCE,
+                    1
+                );
+
+            const p2Progress =
+                Math.min(
+                    player2.distance /
+                    FINISH_DISTANCE,
+                    1
+                );
+
+
+            ctx.fillStyle = "#111827";
+
+            ctx.fillRect(
+                75,
+                15,
+                135,
+                12
+            );
+
+            ctx.fillRect(
+                505,
+                15,
+                135,
+                12
+            );
+
+
+            ctx.fillStyle = player1.color;
+
+            ctx.fillRect(
+                75,
+                15,
+                135 * p1Progress,
+                12
+            );
+
+
+            ctx.fillStyle = player2.color;
+
+            ctx.fillRect(
+                505,
+                15,
+                135 * p2Progress,
+                12
+            );
+
+
+            ctx.strokeStyle = "white";
+
+            ctx.strokeRect(
+                75,
+                15,
+                135,
+                12
+            );
+
+            ctx.strokeRect(
+                505,
+                15,
+                135,
+                12
+            );
+
+        }
+
+
+        /* -------------------------
+           UI
+        ------------------------- */
+
+        function updateUI() {
+
+            document.getElementById("p1Distance")
+                .textContent =
+                Math.floor(player1.distance);
+
+            document.getElementById("p2Distance")
+                .textContent =
+                Math.floor(player2.distance);
+
+            document.getElementById("p1Lives")
+                .textContent =
+                player1.lives;
+
+            document.getElementById("p2Lives")
+                .textContent =
+                player2.lives;
+
+        }
+
+
+        /* -------------------------
+           RESTART
+        ------------------------- */
+
+        function restartGame() {
+
+            gameRunning = true;
+
+            raceSpeed = 5;
+            spawnTimer = 0;
+
+            traffic = [];
+            particles = [];
+
+            player1.x = 205;
+            player1.distance = 0;
+            player1.lives = 3;
+            player1.invincible = false;
+            player1.dead = false;
+
+            player2.x = 645;
+            player2.distance = 0;
+            player2.lives = 3;
+            player2.invincible = false;
+            player2.dead = false;
+
+            document.getElementById("message")
+                .textContent = "";
+
+            updateUI();
+
+        }
+
+
+        /* -------------------------
+           GAME LOOP
+        ------------------------- */
+
+        function gameLoop() {
+
+            if (gameRunning) {
+
+                updateRoadLines();
+
+                movePlayers();
+
+                spawnTraffic();
+
+                updateTraffic();
+
+                checkCollisions();
+
+                updateParticles();
+
+                updateDifficulty();
+
+                checkWinner();
+
+                updateUI();
+
+            }
+
+            else {
+
+                updateParticles();
+
+            }
+
+            draw();
+
+            requestAnimationFrame(gameLoop);
+
+        }
+
+
+        /* START */
+
+        createRoadLines();
+
+        updateUI();
+
+        gameLoop();
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Platformer V2 - Hunter's Arcade</title>
+
+<style>
+body {
+    margin: 0;
+    background: #111827;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+h1 {
+    color: #60a5fa;
+    margin-bottom: 5px;
+}
+
+#stats {
+    font-size: 18px;
+    margin: 10px;
+}
+
+canvas {
+    border: 3px solid #2563eb;
+    border-radius: 8px;
+    box-shadow: 0 0 25px #2563eb55;
+    max-width: 95%;
+}
+
+button {
+    background: linear-gradient(135deg,#2563eb,#7c3aed);
+    color: white;
+    border: none;
+    padding: 11px 20px;
+    margin: 10px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    transform: scale(1.05);
+}
+
+#message {
+    font-size: 25px;
+    font-weight: bold;
+    min-height: 30px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Platformer V2</h1>
+
+<div id="stats">
+    Level: <span id="level">1</span>
+    &nbsp; | &nbsp;
+    Coins: <span id="coins">0</span>
+    &nbsp; | &nbsp;
+    Lives: <span id="lives">3</span>
+</div>
+
+<p>A/D or ←/→ to move | W, ↑, or SPACE to jump | Double jump enabled</p>
+
+<canvas id="game" width="900" height="500"></canvas>
+
+<div id="message"></div>
+
+<button onclick="restartLevel()">Restart Level</button>
+
+<button onclick="window.location.href='index.html'">
+Back to Arcade
+</button>
+
+<script>
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const GRAVITY = 0.65;
+
+let currentLevel = 1;
+let lives = 3;
+let totalCoins = 0;
+let gameRunning = true;
+
+let keys = {};
+
+let checkpoint = {
+    x: 40,
+    y: 400
+};
+
+let player = {
+    x: 40,
+    y: 400,
+
+    w: 30,
+    h: 38,
+
+    vx: 0,
+    vy: 0,
+
+    speed: 5,
+    jumpPower: 12,
+
+    grounded: false,
+    jumps: 0
+};
+
+let platforms = [];
+let coins = [];
+let enemies = [];
+let spikes = [];
+let movingPlatforms = [];
+
+let goal = {
+    x: 830,
+    y: 100
+};
+
+
+/* -------------------------
+KEYBOARD
+------------------------- */
+
+document.addEventListener("keydown", e => {
+
+    const key = e.key.toLowerCase();
+
+    keys[key] = true;
+
+    if (
+        e.key === "ArrowLeft" ||
+        e.key === "ArrowRight" ||
+        e.key === "ArrowUp" ||
+        e.key === " "
+    ) {
+        e.preventDefault();
+    }
+
+
+    if (
+        (
+            key === "w" ||
+            key === "arrowup" ||
+            key === " "
+        )
+        &&
+        !e.repeat
+        &&
+        player.jumps < 2
+        &&
+        gameRunning
+    ) {
+
+        player.vy = -player.jumpPower;
+        player.jumps++;
+
+    }
+
+});
+
+
+document.addEventListener("keyup", e => {
+
+    keys[e.key.toLowerCase()] = false;
+
+});
+
+
+/* -------------------------
+LEVELS
+------------------------- */
+
+function loadLevel(level) {
+
+    gameRunning = true;
+
+    document.getElementById("message").textContent = "";
+
+    platforms = [];
+    coins = [];
+    enemies = [];
+    spikes = [];
+    movingPlatforms = [];
+
+
+    if (level === 1) {
+
+        checkpoint = {x:40,y:400};
+
+        platforms = [
+
+            {x:0,y:460,w:900,h:40},
+
+            {x:120,y:390,w:130,h:20},
+
+            {x:310,y:330,w:120,h:20},
+
+            {x:480,y:270,w:120,h:20},
+
+            {x:650,y:200,w:120,h:20},
+
+            {x:800,y:140,w:100,h:20}
+
+        ];
+
+        coins = [
+
+            {x:180,y:355,taken:false},
+
+            {x:365,y:295,taken:false},
+
+            {x:535,y:235,taken:false},
+
+            {x:705,y:165,taken:false},
+
+            {x:850,y:105,taken:false}
+
+        ];
+
+        enemies = [
+
+            {
+                x:350,
+                y:430,
+                w:30,
+                h:30,
+                minX:280,
+                maxX:450,
+                speed:1.5
+            }
+
+        ];
+
+        spikes = [
+
+            {x:540,y:440,w:50,h:20}
+
+        ];
+
+        goal = {
+            x:850,
+            y:90
+        };
+
+    }
+
+
+    if (level === 2) {
+
+        checkpoint = {x:40,y:400};
+
+        platforms = [
+
+            {x:0,y:460,w:160,h:40},
+
+            {x:230,y:390,w:120,h:20},
+
+            {x:430,y:310,w:130,h:20},
+
+            {x:670,y:220,w:120,h:20},
+
+            {x:810,y:140,w:90,h:20}
+
+        ];
+
+        movingPlatforms = [
+
+            {
+                x:150,
+                y:330,
+                w:100,
+                h:18,
+                minX:150,
+                maxX:300,
+                speed:1.5
+            },
+
+            {
+                x:540,
+                y:260,
+                w:100,
+                h:18,
+                minX:520,
+                maxX:680,
+                speed:2
+            }
+
+        ];
+
+        coins = [
+
+            {x:170,y:295,taken:false},
+
+            {x:285,y:355,taken:false},
+
+            {x:490,y:275,taken:false},
+
+            {x:590,y:220,taken:false},
+
+            {x:725,y:185,taken:false},
+
+            {x:850,y:105,taken:false}
+
+        ];
+
+        enemies = [
+
+            {
+                x:450,
+                y:280,
+                w:30,
+                h:30,
+                minX:440,
+                maxX:520,
+                speed:1.5
+            }
+
+        ];
+
+        spikes = [
+
+            {x:160,y:440,w:70,h:20},
+
+            {x:350,y:440,w:90,h:20},
+
+            {x:580,y:440,w:100,h:20}
+
+        ];
+
+        goal = {
+            x:850,
+            y:90
+        };
+
+    }
+
+
+    if (level === 3) {
+
+        checkpoint = {x:40,y:400};
+
+        platforms = [
+
+            {x:0,y:460,w:140,h:40},
+
+            {x:180,y:390,w:110,h:20},
+
+            {x:350,y:320,w:110,h:20},
+
+            {x:520,y:250,w:110,h:20},
+
+            {x:690,y:180,w:110,h:20},
+
+            {x:810,y:110,w:90,h:20}
+
+        ];
+
+        movingPlatforms = [
+
+            {
+                x:100,
+                y:300,
+                w:90,
+                h:18,
+                minX:80,
+                maxX:220,
+                speed:2
+            },
+
+            {
+                x:470,
+                y:180,
+                w:90,
+                h:18,
+                minX:430,
+                maxX:600,
+                speed:2.5
+            }
+
+        ];
+
+        coins = [
+
+            {x:130,y:265,taken:false},
+
+            {x:235,y:355,taken:false},
+
+            {x:405,y:285,taken:false},
+
+            {x:515,y:145,taken:false},
+
+            {x:575,y:215,taken:false},
+
+            {x:745,y:145,taken:false},
+
+            {x:850,y:75,taken:false}
+
+        ];
+
+        enemies = [
+
+            {
+                x:200,
+                y:360,
+                w:30,
+                h:30,
+                minX:190,
+                maxX:260,
+                speed:2
+            },
+
+            {
+                x:530,
+                y:220,
+                w:30,
+                h:30,
+                minX:525,
+                maxX:595,
+                speed:2
+            }
+
+        ];
+
+        spikes = [
+
+            {x:140,y:440,w:40,h:20},
+
+            {x:290,y:440,w:60,h:20},
+
+            {x:460,y:440,w:60,h:20},
+
+            {x:630,y:440,w:60,h:20},
+
+            {x:800,y:440,w:100,h:20}
+
+        ];
+
+        goal = {
+            x:850,
+            y:60
+        };
+
+    }
+
+
+    respawn();
+
+    updateUI();
+}
+
+
+/* -------------------------
+PLAYER
+------------------------- */
+
+function respawn() {
+
+    player.x = checkpoint.x;
+    player.y = checkpoint.y;
+
+    player.vx = 0;
+    player.vy = 0;
+
+    player.jumps = 0;
+
+}
+
+
+function updatePlayer() {
+
+    player.vx = 0;
+
+
+    if (
+        keys["a"] ||
+        keys["arrowleft"]
+    ) {
+
+        player.vx = -player.speed;
+
+    }
+
+
+    if (
+        keys["d"] ||
+        keys["arrowright"]
+    ) {
+
+        player.vx = player.speed;
+
+    }
+
+
+    player.x += player.vx;
+
+
+    if (player.x < 0) {
+        player.x = 0;
+    }
+
+    if (
+        player.x + player.w >
+        canvas.width
+    ) {
+
+        player.x =
+            canvas.width -
+            player.w;
+
+    }
+
+
+    player.vy += GRAVITY;
+
+    player.y += player.vy;
+
+    player.grounded = false;
+
+
+    checkPlatformCollisions();
+
+    checkMovingPlatformCollisions();
+
+
+    if (player.y > canvas.height) {
+
+        loseLife();
+
+    }
+
+}
+
+
+/* -------------------------
+PLATFORM COLLISION
+------------------------- */
+
+function checkPlatformCollisions() {
+
+    for (let p of platforms) {
+
+        if (
+
+            player.vy >= 0 &&
+
+            player.x + player.w > p.x &&
+
+            player.x < p.x + p.w &&
+
+            player.y + player.h >= p.y &&
+
+            player.y + player.h <= p.y + 18
+
+        ) {
+
+            player.y =
+                p.y -
+                player.h;
+
+            player.vy = 0;
+
+            player.grounded = true;
+
+            player.jumps = 0;
+
+        }
+
+    }
+
+}
+
+
+function checkMovingPlatformCollisions() {
+
+    for (let p of movingPlatforms) {
+
+        if (
+
+            player.vy >= 0 &&
+
+            player.x + player.w > p.x &&
+
+            player.x < p.x + p.w &&
+
+            player.y + player.h >= p.y &&
+
+            player.y + player.h <= p.y + 18
+
+        ) {
+
+            player.y =
+                p.y -
+                player.h;
+
+            player.vy = 0;
+
+            player.grounded = true;
+
+            player.jumps = 0;
+
+            player.x += p.speed;
+
+        }
+
+    }
+
+}
+
+
+/* -------------------------
+MOVING PLATFORMS
+------------------------- */
+
+function updateMovingPlatforms() {
+
+    for (let p of movingPlatforms) {
+
+        p.x += p.speed;
+
+        if (
+            p.x > p.maxX ||
+            p.x < p.minX
+        ) {
+
+            p.speed *= -1;
+
+        }
+
+    }
+
+}
+
+
+/* -------------------------
+ENEMIES
+------------------------- */
+
+function updateEnemies() {
+
+    for (let enemy of enemies) {
+
+        enemy.x += enemy.speed;
+
+
+        if (
+            enemy.x > enemy.maxX ||
+            enemy.x < enemy.minX
+        ) {
+
+            enemy.speed *= -1;
+
+        }
+
+
+        if (
+            rectanglesTouch(
+                player.x,
+                player.y,
+                player.w,
+                player.h,
+
+                enemy.x,
+                enemy.y,
+                enemy.w,
+                enemy.h
+            )
+        ) {
+
+            /*
+            If falling on enemy:
+            defeat enemy.
+            */
+
+            if (
+                player.vy > 0 &&
+                player.y + player.h - 10 <
+                enemy.y
+            ) {
+
+                enemy.dead = true;
+
+                player.vy = -8;
+
+            }
+
+            else {
+
+                loseLife();
+
+            }
+
+        }
+
+    }
+
+
+    enemies =
+        enemies.filter(e => !e.dead);
+
+}
+
+
+/* -------------------------
+COINS
+------------------------- */
+
+function checkCoins() {
+
+    for (let coin of coins) {
+
+        if (coin.taken) {
+            continue;
+        }
+
+
+        if (
+
+            player.x + player.w >
+            coin.x - 12 &&
+
+            player.x <
+            coin.x + 12 &&
+
+            player.y + player.h >
+            coin.y - 12 &&
+
+            player.y <
+            coin.y + 12
+
+        ) {
+
+            coin.taken = true;
+
+            totalCoins++;
+
+            updateUI();
+
+        }
+
+    }
+
+}
+
+
+/* -------------------------
+SPIKES
+------------------------- */
+
+function checkSpikes() {
+
+    for (let s of spikes) {
+
+        if (
+            rectanglesTouch(
+
+                player.x,
+                player.y,
+                player.w,
+                player.h,
+
+                s.x,
+                s.y,
+                s.w,
+                s.h
+
+            )
+        ) {
+
+            loseLife();
+
+        }
+
+    }
+
+}
+
+
+/* -------------------------
+GOAL
+------------------------- */
+
+function checkGoal() {
+
+    if (
+
+        player.x + player.w >
+        goal.x &&
+
+        player.y <
+        goal.y + 90
+
+    ) {
+
+        gameRunning = false;
+
+
+        if (currentLevel < 3) {
+
+            document.getElementById("message")
+                .textContent =
+                "LEVEL COMPLETE!";
+
+            setTimeout(() => {
+
+                currentLevel++;
+
+                loadLevel(currentLevel);
+
+            }, 1200);
+
+        }
+
+        else {
+
+            document.getElementById("message")
+                .textContent =
+                "YOU BEAT THE GAME!";
+
+        }
+
+    }
+
+}
+
+
+/* -------------------------
+LIVES
+------------------------- */
+
+function loseLife() {
+
+    if (!gameRunning) return;
+
+    lives--;
+
+    updateUI();
+
+
+    if (lives <= 0) {
+
+        gameRunning = false;
+
+        document.getElementById("message")
+            .textContent =
+            "GAME OVER";
+
+        return;
+
+    }
+
+
+    respawn();
+
+}
+
+
+/* -------------------------
+HELPER
+------------------------- */
+
+function rectanglesTouch(
+    x1,y1,w1,h1,
+    x2,y2,w2,h2
+) {
+
+    return (
+
+        x1 < x2 + w2 &&
+
+        x1 + w1 > x2 &&
+
+        y1 < y2 + h2 &&
+
+        y1 + h1 > y2
+
+    );
+
+}
+
+
+/* -------------------------
+DRAW BACKGROUND
+------------------------- */
+
+function drawBackground() {
+
+    let gradient =
+        ctx.createLinearGradient(
+            0,
+            0,
+            0,
+            canvas.height
+        );
+
+    gradient.addColorStop(
+        0,
+        "#38bdf8"
+    );
+
+    gradient.addColorStop(
+        1,
+        "#dbeafe"
+    );
+
+    ctx.fillStyle = gradient;
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    /* Mountains */
+
+    ctx.fillStyle = "#64748b";
+
+    ctx.beginPath();
+
+    ctx.moveTo(0,400);
+
+    ctx.lineTo(180,170);
+
+    ctx.lineTo(350,400);
+
+    ctx.lineTo(520,190);
+
+    ctx.lineTo(750,400);
+
+    ctx.lineTo(900,220);
+
+    ctx.lineTo(900,500);
+
+    ctx.lineTo(0,500);
+
+    ctx.fill();
+
+
+    /* Snow */
+
+    ctx.fillStyle = "#f8fafc";
+
+    ctx.beginPath();
+
+    ctx.moveTo(130,235);
+    ctx.lineTo(180,170);
+    ctx.lineTo(230,235);
+
+    ctx.fill();
+
+}
+
+
+/* -------------------------
+DRAW WORLD
+------------------------- */
+
+function drawPlatforms() {
+
+    for (let p of platforms) {
+
+        ctx.fillStyle = "#16a34a";
+
+        ctx.fillRect(
+            p.x,
+            p.y,
+            p.w,
+            p.h
+        );
+
+
+        ctx.fillStyle = "#854d0e";
+
+        ctx.fillRect(
+            p.x,
+            p.y + 7,
+            p.w,
+            p.h - 7
+        );
+
+    }
+
+
+    for (let p of movingPlatforms) {
+
+        ctx.fillStyle = "#a855f7";
+
+        ctx.fillRect(
+            p.x,
+            p.y,
+            p.w,
+            p.h
+        );
+
+    }
+
+}
+
+
+function drawCoins() {
+
+    for (let coin of coins) {
+
+        if (coin.taken) continue;
+
+
+        ctx.fillStyle = "#facc15";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            coin.x,
+            coin.y,
+            10,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        ctx.strokeStyle = "#eab308";
+
+        ctx.lineWidth = 3;
+
+        ctx.stroke();
+
+    }
+
+}
+
+
+function drawEnemies() {
+
+    for (let e of enemies) {
+
+        ctx.fillStyle = "#dc2626";
+
+        ctx.fillRect(
+            e.x,
+            e.y,
+            e.w,
+            e.h
+        );
+
+
+        ctx.fillStyle = "white";
+
+        ctx.fillRect(
+            e.x + 5,
+            e.y + 6,
+            6,
+            6
+        );
+
+        ctx.fillRect(
+            e.x + 19,
+            e.y + 6,
+            6,
+            6
+        );
+
+    }
+
+}
+
+
+function drawSpikes() {
+
+    for (let s of spikes) {
+
+        ctx.fillStyle = "#ef4444";
+
+
+        let spikeWidth = 20;
+
+        for (
+            let x = s.x;
+            x < s.x + s.w;
+            x += spikeWidth
+        ) {
+
+            ctx.beginPath();
+
+            ctx.moveTo(
+                x,
+                s.y + s.h
+            );
+
+            ctx.lineTo(
+                x + spikeWidth/2,
+                s.y
+            );
+
+            ctx.lineTo(
+                x + spikeWidth,
+                s.y + s.h
+            );
+
+            ctx.fill();
+
+        }
+
+    }
+
+}
+
+
+function drawGoal() {
+
+    ctx.fillStyle = "white";
+
+    ctx.fillRect(
+        goal.x,
+        goal.y,
+        5,
+        90
+    );
+
+
+    ctx.fillStyle = "#facc15";
+
+    ctx.beginPath();
+
+    ctx.moveTo(goal.x + 5, goal.y);
+
+    ctx.lineTo(
+        goal.x + 50,
+        goal.y + 15
+    );
+
+    ctx.lineTo(
+        goal.x + 5,
+        goal.y + 30
+    );
+
+    ctx.fill();
+
+}
+
+
+/* -------------------------
+DRAW PLAYER
+------------------------- */
+
+function drawPlayer() {
+
+    ctx.fillStyle = "#2563eb";
+
+    ctx.fillRect(
+        player.x,
+        player.y,
+        player.w,
+        player.h
+    );
+
+
+    /* Face */
+
+    ctx.fillStyle = "white";
+
+    ctx.fillRect(
+        player.x + 18,
+        player.y + 8,
+        6,
+        6
+    );
+
+
+    ctx.fillStyle = "#111827";
+
+    ctx.fillRect(
+        player.x + 21,
+        player.y + 10,
+        2,
+        2
+    );
+
+}
+
+
+/* -------------------------
+DRAW
+------------------------- */
+
+function draw() {
+
+    drawBackground();
+
+    drawPlatforms();
+
+    drawSpikes();
+
+    drawCoins();
+
+    drawEnemies();
+
+    drawGoal();
+
+    drawPlayer();
+
+}
+
+
+/* -------------------------
+UI
+------------------------- */
+
+function updateUI() {
+
+    document.getElementById("level")
+        .textContent = currentLevel;
+
+    document.getElementById("coins")
+        .textContent = totalCoins;
+
+    document.getElementById("lives")
+        .textContent = lives;
+
+}
+
+
+/* -------------------------
+RESTART
+------------------------- */
+
+function restartLevel() {
+
+    lives = 3;
+
+    document.getElementById("message")
+        .textContent = "";
+
+    loadLevel(currentLevel);
+
+}
+
+
+/* -------------------------
+GAME LOOP
+------------------------- */
+
+function gameLoop() {
+
+    if (gameRunning) {
+
+        updateMovingPlatforms();
+
+        updatePlayer();
+
+        updateEnemies();
+
+        checkCoins();
+
+        checkSpikes();
+
+        checkGoal();
+
+    }
+
+    draw();
+
+    requestAnimationFrame(gameLoop);
+
+}
+
+
+/* START */
+
+loadLevel(1);
+
+gameLoop();
+
+</script>
+
+</body>
+</html>

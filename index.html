@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GoogleClassroom</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at top, #1d4ed8 0%, #111827 35%, #080c14 100%);
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        header {
+            padding: 60px 20px 30px;
+        }
+
+        h1 {
+            font-size: 55px;
+            margin: 0;
+            color: #60a5fa;
+            text-shadow:
+                0 0 10px #2563eb,
+                0 0 25px #2563eb;
+        }
+
+        .subtitle {
+            color: #cbd5e1;
+            font-size: 18px;
+            margin-top: 15px;
+        }
+
+        .games {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 25px;
+            padding: 30px;
+        }
+
+        .game-card {
+            width: 250px;
+            background: #1f2937;
+            border: 2px solid #374151;
+            border-radius: 18px;
+            padding: 25px;
+            transition: 0.25s;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .game-card:hover {
+            transform: translateY(-8px);
+            border-color: #3b82f6;
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.5);
+        }
+
+        .game-icon {
+            font-size: 55px;
+            margin-bottom: 10px;
+        }
+
+        .game-card h2 {
+            margin: 10px 0;
+        }
+
+        .game-card p {
+            color: #94a3b8;
+            min-height: 45px;
+        }
+
+        button {
+            width: 100%;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: white;
+            padding: 13px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #3b82f6;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding: 25px;
+            color: #64748b;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Game Gallery</h1>
+        <p class="subtitle">Choose a game and start playing.</p>
+    </header>
+
+    <div class="games">
+
+        <div class="game-card">
+            <div class="game-icon">🐍</div>
+            <h2>Snake</h2>
+            <p>Eat the food, grow longer, and don't crash.</p>
+
+            <button onclick="window.location.href='snake.html'">
+                PLAY
+            </button>
+        </div>
+
+        <div class="game-card">
+            <div class="game-icon">🏓</div>
+            <h2>Pong</h2>
+            <p>Take on the computer in classic Pong.</p>
+
+            <button onclick="window.location.href='pong.html'">
+                PLAY
+            </button>
+        </div>
+
+        <div class="game-card">
+            <div class="game-icon">🧱</div>
+            <h2>Breakout</h2>
+            <p>Smash every brick without losing the ball.</p>
+
+            <button onclick="window.location.href='breakout.html'">
+                PLAY
+            </button>
+        </div>
+<div class="game-card">
+    <div class="game-icon">🏃</div>
+    <h2>Platformer</h2>
+
+    <p>
+        Jump across platforms, collect coins,
+        and reach the flag.
+    </p>
+
+    <button onclick="window.location.href='platformer.html'">
+        PLAY
+    </button>
+</div>
+<div class="game-card">
+    <div class="game-icon">🚀</div>
+
+    <h2>Space Shooter</h2>
+
+    <p>
+        Blast through enemy waves and take down the bosses.
+    </p>
+
+    <button onclick="window.location.href='spaceshooter.html'">
+        PLAY
+    </button>
+</div>
+<div class="game-card">
+    <div class="game-icon">🏎️</div>
+
+    <h2>2-Player Racing</h2>
+
+    <p>
+        Race a friend, dodge traffic, and reach the finish first.
+    </p>
+
+    <button onclick="window.location.href='racing.html'">
+        PLAY
+    </button>
+</div>
+    </div>
+
+    <footer>
+        Hunter's Arcade
+    </footer>
+
+</body>
+</html>
