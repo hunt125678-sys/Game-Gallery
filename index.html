@@ -1,246 +1,974 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>GoogleClassroom</title>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Game Gallery</title>
 
     <style>
+
         * {
             box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
         }
 
         body {
             margin: 0;
             min-height: 100vh;
+
             background:
-                radial-gradient(circle at top, #1d4ed8 0%, #111827 35%, #080c14 100%);
+                radial-gradient(
+                    circle at top,
+                    #1d4ed8 0%,
+                    #111827 32%,
+                    #080c14 70%
+                );
+
             color: white;
             font-family: Arial, sans-serif;
-            text-align: center;
         }
 
+
+        /* =====================
+           HEADER
+        ===================== */
+
         header {
-            padding: 60px 20px 30px;
+            text-align: center;
+            padding: 65px 20px 35px;
         }
 
         h1 {
-            font-size: 55px;
+            font-size: clamp(
+                42px,
+                7vw,
+                72px
+            );
+
             margin: 0;
+
             color: #60a5fa;
+
             text-shadow:
                 0 0 10px #2563eb,
-                0 0 25px #2563eb;
+                0 0 25px #2563eb,
+                0 0 50px #7c3aed;
         }
 
         .subtitle {
             color: #cbd5e1;
-            font-size: 18px;
-            margin-top: 15px;
+            font-size: 19px;
+            margin: 15px 0 8px;
         }
 
-        .games {
+        .game-count {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+
+        /* =====================
+           NAVIGATION
+        ===================== */
+
+        nav {
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
-            gap: 25px;
-            padding: 30px;
+
+            gap: 10px;
+
+            padding: 0 20px 30px;
         }
 
-        .game-card {
-            width: 250px;
-            background: #1f2937;
-            border: 2px solid #374151;
-            border-radius: 18px;
-            padding: 25px;
-            transition: 0.25s;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-        }
-
-        .game-card:hover {
-            transform: translateY(-8px);
-            border-color: #3b82f6;
-            box-shadow: 0 0 25px rgba(59, 130, 246, 0.5);
-        }
-
-        .game-icon {
-            font-size: 55px;
-            margin-bottom: 10px;
-        }
-
-        .game-card h2 {
-            margin: 10px 0;
-        }
-
-        .game-card p {
-            color: #94a3b8;
-            min-height: 45px;
-        }
-
-        button {
-            width: 100%;
-            background: linear-gradient(135deg, #2563eb, #7c3aed);
+        nav a {
             color: white;
-            padding: 13px;
-            margin-top: 10px;
-            border: none;
-            border-radius: 10px;
-            font-size: 17px;
-            font-weight: bold;
-            cursor: pointer;
+            text-decoration: none;
+
+            background:
+                rgba(
+                    30,
+                    41,
+                    59,
+                    0.8
+                );
+
+            border:
+                1px solid #475569;
+
+            padding:
+                10px 18px;
+
+            border-radius: 100px;
+
             transition: 0.2s;
         }
 
-        button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 15px #3b82f6;
+        nav a:hover {
+            background: #2563eb;
+            border-color: #60a5fa;
+
+            transform:
+                translateY(-2px);
         }
 
-        footer {
-            margin-top: 40px;
-            padding: 25px;
-            color: #64748b;
+
+        /* =====================
+           SECTIONS
+        ===================== */
+
+        .section {
+            max-width: 1200px;
+            margin: auto;
+
+            padding:
+                20px 25px 45px;
         }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            margin:
+                0 0 8px;
+
+            font-size: 30px;
+        }
+
+        .section-description {
+            color: #94a3b8;
+
+            margin:
+                0 0 25px;
+        }
+
+
+        /* =====================
+           GAME GRID
+        ===================== */
+
+        .games {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(
+                        220px,
+                        1fr
+                    )
+                );
+
+            gap: 22px;
+        }
+
+
+        /* =====================
+           GAME CARDS
+        ===================== */
+
+        .game-card {
+            position: relative;
+
+            display: flex;
+            flex-direction: column;
+
+            min-height: 310px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    #1f2937,
+                    #111827
+                );
+
+            border:
+                1px solid #374151;
+
+            border-radius: 18px;
+
+            padding: 22px;
+
+            overflow: hidden;
+
+            box-shadow:
+                0 10px 25px
+                rgba(
+                    0,
+                    0,
+                    0,
+                    0.35
+                );
+
+            transition:
+                transform 0.25s,
+                border-color 0.25s,
+                box-shadow 0.25s;
+        }
+
+
+        .game-card::before {
+            content: "";
+
+            position: absolute;
+
+            top: 0;
+            left: 0;
+
+            width: 100%;
+            height: 4px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    #3b82f6,
+                    #8b5cf6
+                );
+        }
+
+
+        .game-card:hover {
+            transform:
+                translateY(-7px);
+
+            border-color:
+                #3b82f6;
+
+            box-shadow:
+                0 12px 35px
+                rgba(
+                    59,
+                    130,
+                    246,
+                    0.28
+                );
+        }
+
+
+        .game-icon {
+            font-size: 48px;
+            margin: 8px 0;
+        }
+
+
+        .game-card h3 {
+            font-size: 22px;
+
+            margin:
+                8px 0 10px;
+        }
+
+
+        .game-card p {
+            color: #94a3b8;
+
+            line-height: 1.45;
+
+            margin:
+                0 0 18px;
+
+            flex-grow: 1;
+        }
+
+
+        /* =====================
+           BADGES
+        ===================== */
+
+        .badge {
+            align-self: flex-start;
+
+            font-size: 12px;
+            font-weight: bold;
+
+            padding:
+                5px 10px;
+
+            border-radius: 100px;
+
+            letter-spacing:
+                0.5px;
+        }
+
+
+        .single {
+            color: #bfdbfe;
+            background: #1e3a8a;
+        }
+
+
+        .multi {
+            color: #fecdd3;
+            background: #881337;
+        }
+
+
+        .coop {
+            color: #bbf7d0;
+            background: #14532d;
+        }
+
+
+        /* =====================
+           BUTTON
+        ===================== */
+
+        .play-button {
+            width: 100%;
+
+            border: none;
+
+            border-radius: 10px;
+
+            padding: 13px;
+
+            color: white;
+
+            font-size: 16px;
+            font-weight: bold;
+
+            cursor: pointer;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #2563eb,
+                    #7c3aed
+                );
+
+            transition: 0.2s;
+        }
+
+
+        .play-button:hover {
+            transform:
+                scale(1.03);
+
+            box-shadow:
+                0 0 15px
+                rgba(
+                    96,
+                    165,
+                    250,
+                    0.7
+                );
+        }
+
+
+        /* =====================
+           FEATURED DUNGEON
+        ===================== */
+
+        .featured {
+            grid-column:
+                1 / -1;
+
+            min-height: 250px;
+
+            border:
+                2px solid #7c3aed;
+
+            background:
+                radial-gradient(
+                    circle at top right,
+                    #312e81,
+                    #1f2937 45%,
+                    #111827
+                );
+        }
+
+
+        .featured-label {
+            position: absolute;
+
+            top: 15px;
+            right: 15px;
+
+            color: #fde68a;
+
+            background: #78350f;
+
+            padding:
+                6px 10px;
+
+            border-radius:
+                100px;
+
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+
+        /* =====================
+           ABOUT
+        ===================== */
+
+        .about {
+            max-width: 900px;
+
+            margin:
+                20px auto 50px;
+
+            padding:
+                30px;
+
+            text-align: center;
+
+            background:
+                rgba(
+                    31,
+                    41,
+                    55,
+                    0.65
+                );
+
+            border:
+                1px solid #374151;
+
+            border-radius: 18px;
+        }
+
+
+        .about h2 {
+            margin-top: 0;
+        }
+
+
+        .about p {
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+
+        /* =====================
+           FOOTER
+        ===================== */
+
+        footer {
+            text-align: center;
+
+            padding:
+                30px 20px;
+
+            color: #64748b;
+
+            border-top:
+                1px solid #1f2937;
+        }
+
+
+        /* =====================
+           MOBILE
+        ===================== */
+
+        @media (
+            max-width: 600px
+        ) {
+
+            header {
+                padding-top: 45px;
+            }
+
+            .section {
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+
+            .games {
+                grid-template-columns:
+                    1fr;
+            }
+
+            .game-card {
+                min-height: 0;
+            }
+        }
+
     </style>
 </head>
 
+
 <body>
 
-    <header>
-        <h1>Game Gallery</h1>
-        <p class="subtitle">Choose a game and start playing.</p>
-    </header>
+
+<!-- =====================
+     HEADER
+===================== -->
+
+<header>
+
+    <h1>GAME GALLERY</h1>
+
+    <p class="subtitle">
+        Pick a game. Grab a friend. Start playing.
+    </p>
+
+    <p class="game-count">
+        10 browser games • Single-player • Multiplayer • Co-op
+    </p>
+
+</header>
+
+
+<!-- =====================
+     NAVIGATION
+===================== -->
+
+<nav>
+
+    <a href="#single-player">
+        🎮 Single Player
+    </a>
+
+    <a href="#two-player">
+        👥 2 Player
+    </a>
+
+    <a href="#coop">
+        🤝 Co-op
+    </a>
+
+</nav>
+
+
+
+<!-- =====================
+     SINGLE PLAYER
+===================== -->
+
+<section
+    class="section"
+    id="single-player"
+>
+
+    <h2 class="section-title">
+        🎮 Single Player
+    </h2>
+
+    <p class="section-description">
+        Take on high scores, enemies, and challenges by yourself.
+    </p>
+
 
     <div class="games">
 
-        <div class="game-card">
-            <div class="game-icon">🐍</div>
-            <h2>Snake</h2>
-            <p>Eat the food, grow longer, and don't crash.</p>
 
-            <button onclick="window.location.href='snake.html'">
-                PLAY
-            </button>
-        </div>
+        <!-- SNAKE -->
 
         <div class="game-card">
-            <div class="game-icon">🏓</div>
-            <h2>Pong</h2>
-            <p>Take on the computer in classic Pong.</p>
 
-            <button onclick="window.location.href='pong.html'">
+            <span class="badge single">
+                1 PLAYER
+            </span>
+
+            <div class="game-icon">
+                🐍
+            </div>
+
+            <h3>Snake</h3>
+
+            <p>
+                Eat the food, grow longer,
+                and avoid crashing into
+                the walls or yourself.
+            </p>
+
+            <button
+                class="play-button"
+                onclick="window.location.href='snake.html'"
+            >
                 PLAY
             </button>
+
         </div>
+
+
+
+        <!-- PONG -->
 
         <div class="game-card">
-            <div class="game-icon">🧱</div>
-            <h2>Breakout</h2>
-            <p>Smash every brick without losing the ball.</p>
 
-            <button onclick="window.location.href='breakout.html'">
+            <span class="badge single">
+                1 PLAYER
+            </span>
+
+            <div class="game-icon">
+                🏓
+            </div>
+
+            <h3>Pong</h3>
+
+            <p>
+                Take on the computer
+                in a classic game of Pong.
+            </p>
+
+            <button
+                class="play-button"
+                onclick="window.location.href='pong.html'"
+            >
                 PLAY
             </button>
+
         </div>
-<div class="game-card">
-    <div class="game-icon">🏃</div>
-    <h2>Platformer</h2>
 
-    <p>
-        Jump across platforms, collect coins,
-        and reach the flag.
-    </p>
 
-    <button onclick="window.location.href='platformer.html'">
-        PLAY
-    </button>
-</div>
-<div class="game-card">
-    <div class="game-icon">🚀</div>
 
-    <h2>Space Shooter</h2>
+        <!-- BREAKOUT -->
 
-    <p>
-        Blast through enemy waves and take down the bosses.
-    </p>
+        <div class="game-card">
 
-    <button onclick="window.location.href='spaceshooter.html'">
-        PLAY
-    </button>
-</div>
-<div class="game-card">
-    <div class="game-icon">🏎️</div>
+            <span class="badge single">
+                1 PLAYER
+            </span>
 
-    <h2>2-Player Racing</h2>
+            <div class="game-icon">
+                🧱
+            </div>
 
-    <p>
-        Race a friend, dodge traffic, and reach the finish first.
-    </p>
+            <h3>Breakout</h3>
 
-    <button onclick="window.location.href='racing.html'">
-        PLAY
-    </button>
-</div>
-<div class="game-card">
-    <div class="game-icon">🏒</div>
+            <p>
+                Keep the ball alive
+                and smash every brick
+                on the board.
+            </p>
 
-    <h2>2-Player Air Hockey</h2>
+            <button
+                class="play-button"
+                onclick="window.location.href='breakout.html'"
+            >
+                PLAY
+            </button>
 
-    <p>
-        Battle a friend on the same keyboard.
-        First player to 7 goals wins.
-    </p>
+        </div>
 
-    <button onclick="window.location.href='airhockey.html'">
-        PLAY
-    </button>
-</div>
-<div class="game-card">
-    <div class="game-icon">🏐</div>
 
-    <h2>2-Player Volleyball</h2>
 
-    <p>
-        Jump, spike, and battle a friend.
-        First player to 10 points wins.
-    </p>
+        <!-- PLATFORMER -->
 
-    <button onclick="window.location.href='volleyball.html'">
-        PLAY
-    </button>
-</div>
-<div class="game-card">
-    <div class="game-icon">🧗‍♂️</div>
+        <div class="game-card">
 
-    <h2>Co-op Platformer</h2>
+            <span class="badge single">
+                1 PLAYER
+            </span>
 
-    <p>
-        Work together through three levels,
-        open doors, and escape as a team.
-    </p>
+            <div class="game-icon">
+                🏃
+            </div>
 
-    <button onclick="window.location.href='coop-platformer.html'">
-        PLAY
-    </button>
-</div>
-<div class="game-card">
-    <div class="game-icon">🏰</div>
+            <h3>Platformer</h3>
 
-    <h2>Twin Dungeon</h2>
+            <p>
+                Jump between platforms,
+                collect coins, and reach
+                the flag.
+            </p>
 
-    <p>
-        Two heroes with different abilities.
-        Work together and escape the dungeon.
-    </p>
+            <button
+                class="play-button"
+                onclick="window.location.href='platformer.html'"
+            >
+                PLAY
+            </button>
 
-    <button onclick="window.location.href='coop-dungeon.html'">
-        PLAY
-    </button>
-</div>
+        </div>
+
+
+
+        <!-- SPACE SHOOTER -->
+
+        <div class="game-card">
+
+            <span class="badge single">
+                1 PLAYER
+            </span>
+
+            <div class="game-icon">
+                🚀
+            </div>
+
+            <h3>Space Shooter</h3>
+
+            <p>
+                Fight through enemy waves
+                and survive powerful
+                boss battles.
+            </p>
+
+            <button
+                class="play-button"
+                onclick="window.location.href='spaceshooter.html'"
+            >
+                PLAY
+            </button>
+
+        </div>
+
 
     </div>
 
-    <footer>
-        Hunter's Arcade
-    </footer>
+</section>
+
+
+
+<!-- =====================
+     TWO PLAYER
+===================== -->
+
+<section
+    class="section"
+    id="two-player"
+>
+
+    <h2 class="section-title">
+        👥 2 Player
+    </h2>
+
+    <p class="section-description">
+        Share one keyboard and compete against a friend.
+    </p>
+
+
+    <div class="games">
+
+
+        <!-- RACING -->
+
+        <div class="game-card">
+
+            <span class="badge multi">
+                2 PLAYER
+            </span>
+
+            <div class="game-icon">
+                🏎️
+            </div>
+
+            <h3>Traffic Racing</h3>
+
+            <p>
+                Race against a friend,
+                dodge traffic, and reach
+                the finish first.
+            </p>
+
+            <button
+                class="play-button"
+                onclick="window.location.href='racing.html'"
+            >
+                PLAY
+            </button>
+
+        </div>
+
+
+
+        <!-- AIR HOCKEY -->
+
+        <div class="game-card">
+
+            <span class="badge multi">
+                2 PLAYER
+            </span>
+
+            <div class="game-icon">
+                🏒
+            </div>
+
+            <h3>Air Hockey</h3>
+
+            <p>
+                Battle across the table
+                and be the first player
+                to score seven goals.
+            </p>
+
+            <button
+                class="play-button"
+                onclick="window.location.href='airhockey.html'"
+            >
+                PLAY
+            </button>
+
+        </div>
+
+
+
+        <!-- VOLLEYBALL -->
+
+        <div class="game-card">
+
+            <span class="badge multi">
+                2 PLAYER
+            </span>
+
+            <div class="game-icon">
+                🏐
+            </div>
+
+            <h3>Volleyball</h3>
+
+            <p>
+                Jump, spike, and battle
+                across the net in a
+                two-player match.
+            </p>
+
+            <button
+                class="play-button"
+                onclick="window.location.href='volleyball.html'"
+            >
+                PLAY
+            </button>
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================
+     CO-OP
+===================== -->
+
+<section
+    class="section"
+    id="coop"
+>
+
+    <h2 class="section-title">
+        🤝 Co-op Adventures
+    </h2>
+
+    <p class="section-description">
+        Stop competing and work together to win.
+    </p>
+
+
+    <div class="games">
+
+
+        <!-- CO-OP PLATFORMER -->
+
+        <div class="game-card">
+
+            <span class="badge coop">
+                2 PLAYER CO-OP
+            </span>
+
+            <div class="game-icon">
+                🧗‍♂️
+            </div>
+
+            <h3>Co-op Platformer</h3>
+
+            <p>
+                Work together through
+                three levels, activate
+                switches, and escape.
+            </p>
+
+            <button
+                class="play-button"
+                onclick="window.location.href='coop-platformer.html'"
+            >
+                PLAY
+            </button>
+
+        </div>
+
+
+
+        <!-- TWIN DUNGEON -->
+
+        <div class="game-card featured">
+
+            <span class="featured-label">
+                ⭐ FEATURED
+            </span>
+
+            <span class="badge coop">
+                2 PLAYER CO-OP
+            </span>
+
+            <div class="game-icon">
+                🏰⚔️
+            </div>
+
+            <h3>
+                Heroes of the Twin Dungeon
+            </h3>
+
+            <p>
+                Play as the Azure Knight and
+                Crimson Guardian. Use each hero's
+                unique abilities, activate magical
+                runes, collect treasure, battle
+                dungeon creatures, and escape together.
+            </p>
+
+            <button
+                class="play-button"
+                onclick="window.location.href='coop-dungeon.html'"
+            >
+                ENTER THE DUNGEON
+            </button>
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================
+     ABOUT
+===================== -->
+
+<section class="about">
+
+    <h2>
+        💻 About Game Gallery
+    </h2>
+
+    <p>
+        Game Gallery is a collection of browser games
+        built with HTML, CSS, JavaScript, and the HTML
+        Canvas. The games range from classic arcade
+        challenges to same-keyboard multiplayer and
+        cooperative adventures.
+    </p>
+
+</section>
+
+
+
+<!-- =====================
+     FOOTER
+===================== -->
+
+<footer>
+
+    Hunter's Game Gallery
+
+</footer>
+
 
 </body>
 </html>
