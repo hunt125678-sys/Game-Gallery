@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>2-Player Air Hockey</title>
+
+    <style>
+        body {
+            margin: 0;
+            background: #07111f;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        h1 {
+            color: #60a5fa;
+            text-shadow: 0 0 15px #2563eb;
+            margin-bottom: 5px;
+        }
+
+        canvas {
+            background: #dbeafe;
+            border: 4px solid #2563eb;
+            border-radius: 20px;
+            box-shadow: 0 0 25px #2563eb66;
+            max-width: 95%;
+        }
+
+        #score {
+            font-size: 25px;
+            font-weight: bold;
+            margin: 10px;
+        }
+
+        #message {
+            min-height: 35px;
+            font-size: 27px;
+            font-weight: bold;
+        }
+
+        .p1 {
+            color: #3b82f6;
+        }
+
+        .p2 {
+            color: #ef4444;
+        }
+
+        button {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: white;
+            border: none;
+            border-radius: 9px;
+            padding: 12px 20px;
+            margin: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>2-PLAYER AIR HOCKEY</h1>
+
+    <div id="score">
+        <span class="p1">
+            Player 1: <span id="p1Score">0</span>
+        </span>
+
+        &nbsp;&nbsp; VS &nbsp;&nbsp;
+
+        <span class="p2">
+            Player 2: <span id="p2Score">0</span>
+        </span>
+    </div>
+
+    <p>
+        Player 1: W A S D
+        &nbsp; | &nbsp;
+        Player 2: Arrow Keys
+    </p>
+
+    <p>First to 7 wins!</p>
+
+    <canvas id="game" width="800" height="450"></canvas>
+
+    <div id="message"></div>
+
+    <button onclick="restartGame()">
+        Restart Game
+    </button>
+
+    <button onclick="window.location.href='index.html'">
+        Back to Arcade
+    </button>
+
+<script>
+
+const canvas =
+    document.getElementById("game");
+
+const ctx =
+    canvas.getContext("2d");
+
+const WIN_SCORE = 7;
+
+let keys = {};
+
+let p1Score = 0;
+let p2Score = 0;
+
+let gameRunning = true;
+
+
+/* --------------------------
+PLAYER 1
+-------------------------- */
+
+const player1 = {
+
+    x: 110,
+    y: 225,
+
+    radius: 27,
+
+    speed: 6,
+
+    color: "#3b82f6"
+
+};
+
+
+/* --------------------------
+PLAYER 2
+-------------------------- */
+
+const player2 = {
+
+    x: 690,
+    y: 225,
+
+    radius: 27,
+
+    speed: 6,
+
+    color: "#ef4444"
+
+};
+
+
+/* --------------------------
+PUCK
+-------------------------- */
+
+const puck = {
+
+    x: 400,
+    y: 225,
+
+    radius: 16,
+
+    vx: 4,
+    vy: 2
+
+};
+
+
+/* --------------------------
+KEYBOARD
+-------------------------- */
+
+document.addEventListener(
+    "keydown",
+    function(event) {
+
+        keys[
+            event.key.toLowerCase()
+        ] = true;
+
+
+        if (
+            event.key === "ArrowUp" ||
+            event.key === "ArrowDown" ||
+            event.key === "ArrowLeft" ||
+            event.key === "ArrowRight"
+        ) {
+
+            event.preventDefault();
+
+        }
+
+    }
+);
+
+
+document.addEventListener(
+    "keyup",
+    function(event) {
+
+        keys[
+            event.key.toLowerCase()
+        ] = false;
+
+    }
+);
+
+
+/* --------------------------
+PLAYER MOVEMENT
+-------------------------- */
+
+function movePlayers() {
+
+    /* PLAYER 1 */
+
+    if (keys["w"]) {
+        player1.y -= player1.speed;
+    }
+
+    if (keys["s"]) {
+        player1.y += player1.speed;
+    }
+
+    if (keys["a"]) {
+        player1.x -= player1.speed;
+    }
+
+    if (keys["d"]) {
+        player1.x += player1.speed;
+    }
+
+
+    /* PLAYER 2 */
+
+    if (keys["arrowup"]) {
+        player2.y -= player2.speed;
+    }
+
+    if (keys["arrowdown"]) {
+        player2.y += player2.speed;
+    }
+
+    if (keys["arrowleft"]) {
+        player2.x -= player2.speed;
+    }
+
+    if (keys["arrowright"]) {
+        player2.x += player2.speed;
+    }
+
+
+    keepPlayerInside(
+        player1,
+        0,
+        canvas.width / 2 - 5
+    );
+
+
+    keepPlayerInside(
+        player2,
+        canvas.width / 2 + 5,
+        canvas.width
+    );
+
+}
+
+
+/* --------------------------
+KEEP PLAYERS ON THEIR SIDE
+-------------------------- */
+
+function keepPlayerInside(
+    player,
+    minX,
+    maxX
+) {
+
+    if (
+        player.x - player.radius <
+        minX
+    ) {
+
+        player.x =
+            minX +
+            player.radius;
+
+    }
+
+
+    if (
+        player.x + player.radius >
+        maxX
+    ) {
+
+        player.x =
+            maxX -
+            player.radius;
+
+    }
+
+
+    if (
+        player.y - player.radius <
+        0
+    ) {
+
+        player.y =
+            player.radius;
+
+    }
+
+
+    if (
+        player.y + player.radius >
+        canvas.height
+    ) {
+
+        player.y =
+            canvas.height -
+            player.radius;
+
+    }
+
+}
+
+
+/* --------------------------
+PUCK MOVEMENT
+-------------------------- */
+
+function movePuck() {
+
+    puck.x += puck.vx;
+    puck.y += puck.vy;
+
+
+    /* TOP AND BOTTOM WALL */
+
+    if (
+        puck.y - puck.radius <= 0 ||
+        puck.y + puck.radius >=
+        canvas.height
+    ) {
+
+        puck.vy *= -1;
+
+    }
+
+
+    const goalTop =
+        canvas.height / 2 - 65;
+
+    const goalBottom =
+        canvas.height / 2 + 65;
+
+
+    /* LEFT WALL */
+
+    if (
+        puck.x - puck.radius <= 0
+    ) {
+
+        if (
+            puck.y > goalTop &&
+            puck.y < goalBottom
+        ) {
+
+            scoreGoal(2);
+
+            return;
+
+        }
+
+        puck.x = puck.radius;
+
+        puck.vx =
+            Math.abs(puck.vx);
+
+    }
+
+
+    /* RIGHT WALL */
+
+    if (
+        puck.x + puck.radius >=
+        canvas.width
+    ) {
+
+        if (
+            puck.y > goalTop &&
+            puck.y < goalBottom
+        ) {
+
+            scoreGoal(1);
+
+            return;
+
+        }
+
+        puck.x =
+            canvas.width -
+            puck.radius;
+
+        puck.vx =
+            -Math.abs(puck.vx);
+
+    }
+
+
+    hitPaddle(player1);
+    hitPaddle(player2);
+
+
+    limitPuckSpeed();
+
+}
+
+
+/* --------------------------
+PADDLE COLLISION
+-------------------------- */
+
+function hitPaddle(player) {
+
+    const dx =
+        puck.x - player.x;
+
+    const dy =
+        puck.y - player.y;
+
+    const distance =
+        Math.sqrt(
+            dx * dx +
+            dy * dy
+        );
+
+    const minimumDistance =
+        puck.radius +
+        player.radius;
+
+
+    if (
+        distance <
+        minimumDistance
+    ) {
+
+        let safeDistance =
+            distance;
+
+        if (safeDistance === 0) {
+            safeDistance = 0.01;
+        }
+
+
+        const nx =
+            dx / safeDistance;
+
+        const ny =
+            dy / safeDistance;
+
+
+        /* Push puck outside paddle */
+
+        puck.x =
+            player.x +
+            nx * minimumDistance;
+
+        puck.y =
+            player.y +
+            ny * minimumDistance;
+
+
+        const speed =
+            Math.sqrt(
+                puck.vx * puck.vx +
+                puck.vy * puck.vy
+            );
+
+
+        const newSpeed =
+            Math.min(
+                speed + 0.8,
+                11
+            );
+
+
+        puck.vx =
+            nx * newSpeed;
+
+        puck.vy =
+            ny * newSpeed;
+
+    }
+
+}
+
+
+/* --------------------------
+LIMIT PUCK SPEED
+-------------------------- */
+
+function limitPuckSpeed() {
+
+    const speed =
+        Math.sqrt(
+            puck.vx * puck.vx +
+            puck.vy * puck.vy
+        );
+
+
+    const maxSpeed = 11;
+
+
+    if (speed > maxSpeed) {
+
+        puck.vx =
+            puck.vx /
+            speed *
+            maxSpeed;
+
+        puck.vy =
+            puck.vy /
+            speed *
+            maxSpeed;
+
+    }
+
+}
+
+
+/* --------------------------
+GOALS
+-------------------------- */
+
+function scoreGoal(playerNumber) {
+
+    if (playerNumber === 1) {
+
+        p1Score++;
+
+    }
+
+    else {
+
+        p2Score++;
+
+    }
+
+
+    updateScore();
+
+
+    if (
+        p1Score >= WIN_SCORE
+    ) {
+
+        endGame(
+            "PLAYER 1 WINS!"
+        );
+
+        return;
+
+    }
+
+
+    if (
+        p2Score >= WIN_SCORE
+    ) {
+
+        endGame(
+            "PLAYER 2 WINS!"
+        );
+
+        return;
+
+    }
+
+
+    resetPuck(
+        playerNumber === 1
+            ? -1
+            : 1
+    );
+
+}
+
+
+/* --------------------------
+RESET PUCK
+-------------------------- */
+
+function resetPuck(direction) {
+
+    puck.x =
+        canvas.width / 2;
+
+    puck.y =
+        canvas.height / 2;
+
+
+    puck.vx =
+        4 * direction;
+
+
+    puck.vy =
+        Math.random() * 4 - 2;
+
+}
+
+
+/* --------------------------
+SCORE DISPLAY
+-------------------------- */
+
+function updateScore() {
+
+    document
+        .getElementById("p1Score")
+        .textContent =
+        p1Score;
+
+
+    document
+        .getElementById("p2Score")
+        .textContent =
+        p2Score;
+
+}
+
+
+/* --------------------------
+END GAME
+-------------------------- */
+
+function endGame(message) {
+
+    gameRunning = false;
+
+
+    document
+        .getElementById("message")
+        .textContent =
+        message;
+
+}
+
+
+/* --------------------------
+DRAW TABLE
+-------------------------- */
+
+function drawTable() {
+
+    /* ICE */
+
+    ctx.fillStyle =
+        "#dbeafe";
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    /* CENTER LINE */
+
+    ctx.strokeStyle =
+        "#60a5fa";
+
+    ctx.lineWidth = 4;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        canvas.width / 2,
+        0
+    );
+
+    ctx.lineTo(
+        canvas.width / 2,
+        canvas.height
+    );
+
+    ctx.stroke();
+
+
+    /* CENTER CIRCLE */
+
+    ctx.beginPath();
+
+    ctx.arc(
+        canvas.width / 2,
+        canvas.height / 2,
+        70,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.stroke();
+
+
+    /* CENTER DOT */
+
+    ctx.fillStyle =
+        "#60a5fa";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        canvas.width / 2,
+        canvas.height / 2,
+        7,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    /* GOALS */
+
+    const goalTop =
+        canvas.height / 2 - 65;
+
+
+    ctx.fillStyle =
+        "#ef444455";
+
+    ctx.fillRect(
+        0,
+        goalTop,
+        18,
+        130
+    );
+
+
+    ctx.fillStyle =
+        "#3b82f655";
+
+    ctx.fillRect(
+        canvas.width - 18,
+        goalTop,
+        18,
+        130
+    );
+
+
+    /* TABLE BORDER */
+
+    ctx.strokeStyle =
+        "#2563eb";
+
+    ctx.lineWidth = 8;
+
+    ctx.strokeRect(
+        4,
+        4,
+        canvas.width - 8,
+        canvas.height - 8
+    );
+
+}
+
+
+/* --------------------------
+DRAW PLAYER
+-------------------------- */
+
+function drawPlayer(player) {
+
+    /* Shadow */
+
+    ctx.fillStyle =
+        "#00000033";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        player.x + 3,
+        player.y + 4,
+        player.radius,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    /* Paddle */
+
+    ctx.fillStyle =
+        player.color;
+
+    ctx.beginPath();
+
+    ctx.arc(
+        player.x,
+        player.y,
+        player.radius,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    /* Paddle center */
+
+    ctx.fillStyle =
+        "white";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        player.x,
+        player.y,
+        10,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+}
+
+
+/* --------------------------
+DRAW PUCK
+-------------------------- */
+
+function drawPuck() {
+
+    ctx.fillStyle =
+        "#111827";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        puck.x,
+        puck.y,
+        puck.radius,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    ctx.strokeStyle =
+        "#475569";
+
+    ctx.lineWidth = 3;
+
+    ctx.stroke();
+
+}
+
+
+/* --------------------------
+DRAW
+-------------------------- */
+
+function draw() {
+
+    drawTable();
+
+    drawPlayer(player1);
+
+    drawPlayer(player2);
+
+    drawPuck();
+
+}
+
+
+/* --------------------------
+RESTART
+-------------------------- */
+
+function restartGame() {
+
+    p1Score = 0;
+    p2Score = 0;
+
+    gameRunning = true;
+
+
+    player1.x = 110;
+    player1.y = 225;
+
+
+    player2.x = 690;
+    player2.y = 225;
+
+
+    document
+        .getElementById("message")
+        .textContent = "";
+
+
+    updateScore();
+
+
+    resetPuck(
+        Math.random() > 0.5
+            ? 1
+            : -1
+    );
+
+}
+
+
+/* --------------------------
+GAME LOOP
+-------------------------- */
+
+function gameLoop() {
+
+    if (gameRunning) {
+
+        movePlayers();
+
+        movePuck();
+
+    }
+
+
+    draw();
+
+
+    requestAnimationFrame(
+        gameLoop
+    );
+
+}
+
+
+/* START GAME */
+
+updateScore();
+
+resetPuck(1);
+
+gameLoop();
+
+</script>
+
+</body>
+</html>
