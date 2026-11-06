@@ -1,0 +1,3616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Heroes of the Twin Dungeon</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at top, #312e81, #111827 50%, #020617);
+    color: rgb(202, 23, 23);
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+h1 {
+    margin: 18px 0 5px;
+    color: #fde68a;
+    text-shadow:
+        0 0 10px #f59e0b,
+        0 0 25px #7c3aed;
+}
+
+.subtitle {
+    color: #cbd5e1;
+    margin: 5px;
+}
+
+.hud {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 30px;
+    margin: 12px;
+}
+
+.hero {
+    background: #111827;
+    border-radius: 12px;
+    padding: 8px 18px;
+    min-width: 220px;
+}
+
+.blue {
+    border: 2px solid #38bdf8;
+}
+
+.red {
+    border: 2px solid #fb7185;
+}
+
+.health {
+    height: 13px;
+    background: #374151;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 5px;
+}
+
+.health-fill {
+    height: 100%;
+    transition: 0.2s;
+}
+
+#p1Health {
+    background: #38bdf8;
+}
+
+#p2Health {
+    background: #fb7185;
+}
+
+.stats {
+    margin: 8px;
+    color: #fde68a;
+    font-weight: bold;
+}
+
+canvas {
+    display: block;
+    margin: auto;
+    max-width: 96%;
+    background: #111827;
+    border: 4px solid #7c3aed;
+    border-radius: 14px;
+    box-shadow:
+        0 0 30px #7c3aed66,
+        0 15px 50px #000;
+}
+
+#message {
+    min-height: 40px;
+    font-size: 26px;
+    font-weight: bold;
+    color: #facc15;
+    margin: 10px;
+}
+
+.controls {
+    color: #cbd5e1;
+    font-size: 14px;
+}
+
+button {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white;
+    border: none;
+    border-radius: 9px;
+    padding: 12px 20px;
+    margin: 8px;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px #60a5fa;
+}
+</style>
+</head>
+
+<body>
+
+<h1>HEROES OF THE TWIN DUNGEON</h1>
+
+<p class="subtitle">
+Two heroes. One dungeon. Escape together.
+</p>
+
+<div class="hud">
+
+    <div class="hero blue">
+        <strong>⚔ Azure Knight</strong>
+
+        <div class="health">
+            <div
+                id="p1Health"
+                class="health-fill"
+            ></div>
+        </div>
+
+        <small>
+            A / D • W Jump • F Ability
+        </small>
+    </div>
+
+    <div class="hero red">
+        <strong>🛡 Crimson Guardian</strong>
+
+        <div class="health">
+            <div
+                id="p2Health"
+                class="health-fill"
+            ></div>
+        </div>
+
+        <small>
+            ← / → • ↑ Jump • Enter Ability
+        </small>
+    </div>
+
+</div>
+
+<div class="stats">
+
+Room:
+<span id="roomText">1</span>
+
+&nbsp; • &nbsp;
+
+Treasure:
+<span id="treasureText">0</span>
+
+&nbsp; • &nbsp;
+
+Keys:
+<span id="keyText">0</span>
+
+</div>
+
+<canvas
+    id="game"
+    width="950"
+    height="520"
+></canvas>
+
+<div id="message"></div>
+
+<p class="controls">
+Azure can double-jump and activate blue runes.
+Crimson can activate red runes and push heavy blocks.
+Both heroes must reach the exit.
+</p>
+
+<button onclick="restartRoom()">
+Restart Room
+</button>
+
+<button onclick="restartGame()">
+Restart Adventure
+</button>
+
+<button onclick="window.location.href='index.html'">
+Back to Arcade
+</button>
+
+
+<script>
+
+/* ========================================
+   SETUP
+======================================== */
+
+const canvas =
+    document.getElementById("game");
+
+const ctx =
+    canvas.getContext("2d");
+
+const WIDTH = canvas.width;
+const HEIGHT = canvas.height;
+
+const FLOOR = 470;
+const GRAVITY = 0.65;
+
+let keys = {};
+
+let room = 1;
+let treasure = 0;
+let dungeonKeys = 0;
+
+let gameRunning = true;
+let changingRoom = false;
+
+let platforms = [];
+let spikes = [];
+let gems = [];
+let enemies = [];
+let blocks = [];
+let runes = [];
+let doors = [];
+let particles = [];
+let movingPlatforms = [];
+
+let exitDoor = null;
+
+
+/* ========================================
+   HERO CREATION
+======================================== */
+
+function makeHero(
+    x,
+    color,
+    dark,
+    trim,
+    controls,
+    heroType
+) {
+
+    return {
+
+        x: x,
+        y: 400,
+
+        spawnX: x,
+        spawnY: 400,
+
+        w: 34,
+        h: 55,
+
+        vx: 0,
+        vy: 0,
+
+        speed: 4.3,
+        jumpPower: 12,
+
+        grounded: false,
+        jumps: 0,
+
+        health: 100,
+        maxHealth: 100,
+
+        color: color,
+        dark: dark,
+        trim: trim,
+
+        controls: controls,
+
+        heroType: heroType,
+
+        facing: 1,
+
+        walkTime: 0,
+
+        invincible: 0,
+
+        atExit: false,
+
+        abilityFlash: 0
+    };
+
+}
+
+
+/* AZURE KNIGHT */
+
+const azure = makeHero(
+
+    70,
+
+    "#38bdf8",
+    "#075985",
+    "#facc15",
+
+    {
+        left: "a",
+        right: "d",
+        jump: "w",
+        ability: "f"
+    },
+
+    "azure"
+
+);
+
+
+/* CRIMSON GUARDIAN */
+
+const crimson = makeHero(
+
+    120,
+
+    "#fb7185",
+    "#9f1239",
+    "#d1d5db",
+
+    {
+        left: "arrowleft",
+        right: "arrowright",
+        jump: "arrowup",
+        ability: "enter"
+    },
+
+    "crimson"
+
+);
+
+
+/* ========================================
+   KEYBOARD
+======================================== */
+
+document.addEventListener(
+    "keydown",
+    function(event) {
+
+        const key =
+            event.key.toLowerCase();
+
+        keys[key] = true;
+
+
+        if (
+            event.key.startsWith("Arrow")
+        ) {
+
+            event.preventDefault();
+
+        }
+
+
+        if (event.repeat) {
+            return;
+        }
+
+
+        if (
+            key === azure.controls.jump
+        ) {
+
+            jumpHero(azure);
+
+        }
+
+
+        if (
+            key === crimson.controls.jump
+        ) {
+
+            jumpHero(crimson);
+
+        }
+
+
+        if (
+            key === azure.controls.ability
+        ) {
+
+            useAbility(azure);
+
+        }
+
+
+        if (
+            key === crimson.controls.ability
+        ) {
+
+            useAbility(crimson);
+
+        }
+
+    }
+);
+
+
+document.addEventListener(
+    "keyup",
+    function(event) {
+
+        keys[
+            event.key.toLowerCase()
+        ] = false;
+
+    }
+);
+
+
+/* ========================================
+   BASIC OBJECT HELPERS
+======================================== */
+
+function platform(
+    x,
+    y,
+    w,
+    h = 20
+) {
+
+    return {
+        x, y, w, h
+    };
+
+}
+
+
+function gem(x, y) {
+
+    return {
+
+        x,
+        y,
+
+        radius: 9,
+
+        collected: false
+
+    };
+
+}
+
+
+function spike(
+    x,
+    y,
+    w
+) {
+
+    return {
+
+        x,
+        y,
+        w,
+        h: 20
+
+    };
+
+}
+
+
+function rune(
+    x,
+    y,
+    type,
+    doorId
+) {
+
+    return {
+
+        x,
+        y,
+
+        w: 38,
+        h: 12,
+
+        type,
+        doorId,
+
+        active: false
+
+    };
+
+}
+
+
+function door(
+    id,
+    x,
+    y,
+    color
+) {
+
+    return {
+
+        id,
+
+        x,
+        y,
+
+        w: 28,
+        h: 90,
+
+        color,
+
+        open: false
+
+    };
+
+}
+
+
+function enemy(
+    x,
+    y,
+    minX,
+    maxX
+) {
+
+    return {
+
+        x,
+        y,
+
+        w: 35,
+        h: 35,
+
+        minX,
+        maxX,
+
+        vx: 1.5,
+
+        alive: true
+
+    };
+
+}
+
+
+function heavyBlock(
+    x,
+    y
+) {
+
+    return {
+
+        x,
+        y,
+
+        w: 55,
+        h: 55
+
+    };
+
+}
+
+
+function movingPlatform(
+    x,
+    y,
+    w,
+    minX,
+    maxX,
+    speed
+) {
+
+    return {
+
+        x,
+        y,
+
+        w,
+        h: 18,
+
+        minX,
+        maxX,
+
+        speed,
+
+        oldX: x
+
+    };
+
+}
+
+
+/* ========================================
+   ROOM LOADER
+======================================== */
+
+function loadRoom() {
+
+    platforms = [];
+    spikes = [];
+    gems = [];
+    enemies = [];
+    blocks = [];
+    runes = [];
+    doors = [];
+    particles = [];
+    movingPlatforms = [];
+
+    changingRoom = false;
+    gameRunning = true;
+
+
+    if (room === 1) {
+
+        roomOne();
+
+    }
+
+    else if (room === 2) {
+
+        roomTwo();
+
+    }
+
+    else if (room === 3) {
+
+        roomThree();
+
+    }
+
+    else {
+
+        finalRoom();
+
+    }
+
+
+    resetHeroPositions();
+
+    updateHUD();
+
+}
+
+
+/* ========================================
+   ROOM 1
+======================================== */
+
+function roomOne() {
+
+    platforms = [
+
+        platform(
+            0,
+            FLOOR,
+            950,
+            50
+        ),
+
+        platform(
+            190,
+            380,
+            120
+        ),
+
+        platform(
+            370,
+            315,
+            120
+        ),
+
+        platform(
+            570,
+            250,
+            130
+        ),
+
+        platform(
+            750,
+            190,
+            150
+        )
+
+    ];
+
+
+    gems = [
+
+        gem(245, 345),
+        gem(430, 280),
+        gem(635, 215),
+        gem(825, 155)
+
+    ];
+
+
+    spikes = [
+
+        spike(
+            310,
+            450,
+            60
+        ),
+
+        spike(
+            700,
+            450,
+            50
+        )
+
+    ];
+
+
+    enemies = [
+
+        enemy(
+            440,
+            435,
+            390,
+            560
+        )
+
+    ];
+
+
+    runes = [
+
+        rune(
+            600,
+            238,
+            "azure",
+            "blue1"
+        )
+
+    ];
+
+
+    doors = [
+
+        door(
+            "blue1",
+            735,
+            100,
+            "#38bdf8"
+        )
+
+    ];
+
+
+    exitDoor = {
+
+        x: 845,
+        y: 100,
+
+        w: 60,
+        h: 90
+
+    };
+
+}
+
+
+/* ========================================
+   ROOM 2
+======================================== */
+
+function roomTwo() {
+
+    platforms = [
+
+        platform(
+            0,
+            FLOOR,
+            950,
+            50
+        ),
+
+        platform(
+            140,
+            375,
+            110
+        ),
+
+        platform(
+            325,
+            305,
+            120
+        ),
+
+        platform(
+            510,
+            235,
+            110
+        ),
+
+        platform(
+            690,
+            310,
+            110
+        ),
+
+        platform(
+            820,
+            210,
+            130
+        )
+
+    ];
+
+
+    movingPlatforms = [
+
+        movingPlatform(
+            230,
+            250,
+            90,
+            200,
+            350,
+            1.7
+        )
+
+    ];
+
+
+    blocks = [
+
+        heavyBlock(
+            600,
+            415
+        )
+
+    ];
+
+
+    runes = [
+
+        rune(
+            170,
+            363,
+            "azure",
+            "blue2"
+        ),
+
+        rune(
+            710,
+            298,
+            "crimson",
+            "red2"
+        )
+
+    ];
+
+
+    doors = [
+
+        door(
+            "blue2",
+            470,
+            145,
+            "#38bdf8"
+        ),
+
+        door(
+            "red2",
+            805,
+            120,
+            "#fb7185"
+        )
+
+    ];
+
+
+    spikes = [
+
+        spike(
+            250,
+            450,
+            80
+        ),
+
+        spike(
+            470,
+            450,
+            70
+        )
+
+    ];
+
+
+    gems = [
+
+        gem(195, 340),
+        gem(375, 270),
+        gem(560, 200),
+        gem(745, 275),
+        gem(865, 175)
+
+    ];
+
+
+    exitDoor = {
+
+        x: 870,
+        y: 120,
+
+        w: 60,
+        h: 90
+
+    };
+
+}
+
+
+/* ========================================
+   ROOM 3
+======================================== */
+
+function roomThree() {
+
+    platforms = [
+
+        platform(
+            0,
+            FLOOR,
+            180,
+            50
+        ),
+
+        platform(
+            250,
+            410,
+            100
+        ),
+
+        platform(
+            420,
+            340,
+            100
+        ),
+
+        platform(
+            590,
+            270,
+            100
+        ),
+
+        platform(
+            760,
+            200,
+            190
+        )
+
+    ];
+
+
+    movingPlatforms = [
+
+        movingPlatform(
+            140,
+            330,
+            90,
+            120,
+            270,
+            2
+        ),
+
+        movingPlatform(
+            500,
+            190,
+            90,
+            460,
+            630,
+            2.2
+        )
+
+    ];
+
+
+    spikes = [
+
+        spike(
+            180,
+            450,
+            70
+        ),
+
+        spike(
+            350,
+            450,
+            70
+        ),
+
+        spike(
+            520,
+            450,
+            70
+        ),
+
+        spike(
+            690,
+            450,
+            70
+        )
+
+    ];
+
+
+    enemies = [
+
+        enemy(
+            270,
+            375,
+            255,
+            320
+        ),
+
+        enemy(
+            610,
+            235,
+            595,
+            660
+        )
+
+    ];
+
+
+    runes = [
+
+        rune(
+            450,
+            328,
+            "azure",
+            "blue3"
+        ),
+
+        rune(
+            615,
+            258,
+            "crimson",
+            "red3"
+        )
+
+    ];
+
+
+    doors = [
+
+        door(
+            "blue3",
+            720,
+            110,
+            "#38bdf8"
+        ),
+
+        door(
+            "red3",
+            750,
+            110,
+            "#fb7185"
+        )
+
+    ];
+
+
+    gems = [
+
+        gem(175, 290),
+        gem(300, 375),
+        gem(470, 305),
+        gem(550, 150),
+        gem(640, 235),
+        gem(830, 165)
+
+    ];
+
+
+    exitDoor = {
+
+        x: 860,
+        y: 110,
+
+        w: 60,
+        h: 90
+
+    };
+
+}
+
+
+/* ========================================
+   FINAL ROOM
+======================================== */
+
+function finalRoom() {
+
+    platforms = [
+
+        platform(
+            0,
+            FLOOR,
+            950,
+            50
+        ),
+
+        platform(
+            160,
+            370,
+            130
+        ),
+
+        platform(
+            410,
+            300,
+            130
+        ),
+
+        platform(
+            660,
+            370,
+            130
+        )
+
+    ];
+
+
+    spikes = [
+
+        spike(
+            300,
+            450,
+            90
+        ),
+
+        spike(
+            560,
+            450,
+            90
+        )
+
+    ];
+
+
+    enemies = [
+
+        enemy(
+            210,
+            335,
+            170,
+            250
+        ),
+
+        enemy(
+            455,
+            265,
+            420,
+            500
+        ),
+
+        enemy(
+            705,
+            335,
+            670,
+            750
+        )
+
+    ];
+
+
+    runes = [
+
+        rune(
+            205,
+            358,
+            "azure",
+            "finalBlue"
+        ),
+
+        rune(
+            700,
+            358,
+            "crimson",
+            "finalRed"
+        )
+
+    ];
+
+
+    doors = [
+
+        door(
+            "finalBlue",
+            820,
+            380,
+            "#38bdf8"
+        ),
+
+        door(
+            "finalRed",
+            850,
+            380,
+            "#fb7185"
+        )
+
+    ];
+
+
+    gems = [
+
+        gem(230, 320),
+        gem(475, 250),
+        gem(725, 320)
+
+    ];
+
+
+    exitDoor = {
+
+        x: 875,
+        y: 380,
+
+        w: 60,
+        h: 90
+
+    };
+
+}
+
+
+/* ========================================
+   JUMPING
+======================================== */
+
+function jumpHero(hero) {
+
+    if (!gameRunning) {
+        return;
+    }
+
+
+    let allowedJumps = 1;
+
+
+    /*
+    Azure Knight gets
+    a double jump.
+    */
+
+    if (
+        hero.heroType ===
+        "azure"
+    ) {
+
+        allowedJumps = 2;
+
+    }
+
+
+    if (
+        hero.jumps <
+        allowedJumps
+    ) {
+
+        hero.vy =
+            -hero.jumpPower;
+
+        hero.jumps++;
+
+
+        makeParticles(
+            hero.x +
+            hero.w / 2,
+            hero.y +
+            hero.h,
+            hero.color,
+            8
+        );
+
+    }
+
+}
+
+
+/* ========================================
+   SPECIAL ABILITIES
+======================================== */
+
+function useAbility(hero) {
+
+    if (!gameRunning) {
+        return;
+    }
+
+
+    hero.abilityFlash = 20;
+
+
+    makeParticles(
+        hero.x +
+        hero.w / 2,
+        hero.y +
+        hero.h / 2,
+        hero.color,
+        18
+    );
+
+
+    /* Rune activation */
+
+    for (const r of runes) {
+
+        if (
+            r.active ||
+            r.type !==
+            hero.heroType
+        ) {
+
+            continue;
+
+        }
+
+
+        const distance =
+            Math.abs(
+                hero.x - r.x
+            );
+
+
+        if (distance < 75) {
+
+            r.active = true;
+
+
+            const matchingDoor =
+                doors.find(
+
+                    d =>
+                    d.id ===
+                    r.doorId
+
+                );
+
+
+            if (matchingDoor) {
+
+                matchingDoor.open =
+                    true;
+
+            }
+
+
+            showMessage(
+                hero.heroType ===
+                "azure"
+                ? "BLUE RUNE ACTIVATED!"
+                : "RED RUNE ACTIVATED!"
+            );
+
+        }
+
+    }
+
+
+    /*
+    Crimson can shove
+    heavy blocks.
+    */
+
+    if (
+        hero.heroType ===
+        "crimson"
+    ) {
+
+        for (const block of blocks) {
+
+            const dx =
+                block.x -
+                hero.x;
+
+
+            const dy =
+                Math.abs(
+                    block.y -
+                    hero.y
+                );
+
+
+            if (
+                Math.abs(dx) <
+                85 &&
+                dy < 70
+            ) {
+
+                block.x +=
+                    hero.facing * 45;
+
+
+                block.x =
+                    Math.max(
+                        0,
+                        Math.min(
+                            WIDTH -
+                            block.w,
+                            block.x
+                        )
+                    );
+
+
+                makeParticles(
+                    block.x +
+                    block.w / 2,
+                    block.y +
+                    block.h,
+                    "#94a3b8",
+                    14
+                );
+
+            }
+
+        }
+
+    }
+
+}
+
+
+/* ========================================
+   HERO UPDATE
+======================================== */
+
+function updateHero(hero) {
+
+    hero.vx = 0;
+
+
+    if (
+        keys[
+            hero.controls.left
+        ]
+    ) {
+
+        hero.vx =
+            -hero.speed;
+
+        hero.facing = -1;
+
+    }
+
+
+    if (
+        keys[
+            hero.controls.right
+        ]
+    ) {
+
+        hero.vx =
+            hero.speed;
+
+        hero.facing = 1;
+
+    }
+
+
+    if (
+        Math.abs(hero.vx) >
+        0
+    ) {
+
+        hero.walkTime += 0.2;
+
+    }
+
+
+    hero.x += hero.vx;
+
+
+    if (hero.x < 0) {
+        hero.x = 0;
+    }
+
+
+    if (
+        hero.x +
+        hero.w >
+        WIDTH
+    ) {
+
+        hero.x =
+            WIDTH -
+            hero.w;
+
+    }
+
+
+    collideHorizontal(hero);
+
+
+    const oldBottom =
+        hero.y +
+        hero.h;
+
+
+    hero.vy += GRAVITY;
+
+    hero.y += hero.vy;
+
+    hero.grounded = false;
+
+
+    landOnPlatforms(
+        hero,
+        oldBottom
+    );
+
+
+    landOnMovingPlatforms(
+        hero,
+        oldBottom
+    );
+
+
+    collideDoors(hero);
+
+
+    if (
+        hero.y >
+        HEIGHT + 80
+    ) {
+
+        damageHero(
+            hero,
+            30
+        );
+
+        respawnHero(hero);
+
+    }
+
+
+    checkSpikes(hero);
+    collectGems(hero);
+    touchEnemies(hero);
+
+    checkExit(hero);
+
+
+    if (
+        hero.invincible > 0
+    ) {
+
+        hero.invincible--;
+
+    }
+
+
+    if (
+        hero.abilityFlash > 0
+    ) {
+
+        hero.abilityFlash--;
+
+    }
+
+}
+
+
+/* ========================================
+   HORIZONTAL COLLISION
+======================================== */
+
+function collideHorizontal(hero) {
+
+    const objects =
+        platforms.concat(
+            blocks
+        );
+
+
+    for (const p of objects) {
+
+        if (
+            rectanglesTouch(
+                hero,
+                p
+            )
+        ) {
+
+            if (hero.vx > 0) {
+
+                hero.x =
+                    p.x -
+                    hero.w;
+
+            }
+
+            else if (
+                hero.vx < 0
+            ) {
+
+                hero.x =
+                    p.x +
+                    p.w;
+
+            }
+
+        }
+
+    }
+
+}
+
+
+/* ========================================
+   PLATFORM LANDING
+======================================== */
+
+function landOnPlatforms(
+    hero,
+    oldBottom
+) {
+
+    const objects =
+        platforms.concat(
+            blocks
+        );
+
+
+    for (const p of objects) {
+
+        const newBottom =
+            hero.y +
+            hero.h;
+
+
+        if (
+
+            hero.vy >= 0 &&
+
+            hero.x +
+            hero.w >
+            p.x &&
+
+            hero.x <
+            p.x +
+            p.w &&
+
+            oldBottom <=
+            p.y + 7 &&
+
+            newBottom >=
+            p.y
+
+        ) {
+
+            hero.y =
+                p.y -
+                hero.h;
+
+            hero.vy = 0;
+
+            hero.grounded = true;
+            hero.jumps = 0;
+
+        }
+
+    }
+
+}
+
+
+/* ========================================
+   MOVING PLATFORMS
+======================================== */
+
+function updateMovingPlatforms() {
+
+    for (
+        const p of
+        movingPlatforms
+    ) {
+
+        p.oldX = p.x;
+
+        p.x += p.speed;
+
+
+        if (
+            p.x <= p.minX ||
+            p.x >= p.maxX
+        ) {
+
+            p.speed *= -1;
+
+        }
+
+    }
+
+}
+
+
+function landOnMovingPlatforms(
+    hero,
+    oldBottom
+) {
+
+    for (
+        const p of
+        movingPlatforms
+    ) {
+
+        if (
+
+            hero.vy >= 0 &&
+
+            hero.x +
+            hero.w >
+            p.x &&
+
+            hero.x <
+            p.x +
+            p.w &&
+
+            oldBottom <=
+            p.y + 7 &&
+
+            hero.y +
+            hero.h >=
+            p.y
+
+        ) {
+
+            hero.y =
+                p.y -
+                hero.h;
+
+            hero.vy = 0;
+
+            hero.grounded = true;
+            hero.jumps = 0;
+
+
+            hero.x +=
+                p.x -
+                p.oldX;
+
+        }
+
+    }
+
+}
+
+
+/* ========================================
+   DOORS
+======================================== */
+
+function collideDoors(hero) {
+
+    for (const d of doors) {
+
+        if (
+            d.open ||
+            !rectanglesTouch(
+                hero,
+                d
+            )
+        ) {
+
+            continue;
+
+        }
+
+
+        if (hero.vx > 0) {
+
+            hero.x =
+                d.x -
+                hero.w;
+
+        }
+
+        else if (
+            hero.vx < 0
+        ) {
+
+            hero.x =
+                d.x +
+                d.w;
+
+        }
+
+    }
+
+}
+
+
+/* ========================================
+   TREASURE
+======================================== */
+
+function collectGems(hero) {
+
+    for (const g of gems) {
+
+        if (g.collected) {
+            continue;
+        }
+
+
+        const box = {
+
+            x:
+                g.x -
+                g.radius,
+
+            y:
+                g.y -
+                g.radius,
+
+            w:
+                g.radius * 2,
+
+            h:
+                g.radius * 2
+
+        };
+
+
+        if (
+            rectanglesTouch(
+                hero,
+                box
+            )
+        ) {
+
+            g.collected = true;
+
+            treasure++;
+
+
+            makeParticles(
+                g.x,
+                g.y,
+                "#fde047",
+                14
+            );
+
+
+            updateHUD();
+
+        }
+
+    }
+
+}
+
+
+/* ========================================
+   ENEMIES
+======================================== */
+
+function updateEnemies() {
+
+    for (const e of enemies) {
+
+        if (!e.alive) {
+            continue;
+        }
+
+
+        e.x += e.vx;
+
+
+        if (
+            e.x <= e.minX ||
+            e.x >= e.maxX
+        ) {
+
+            e.vx *= -1;
+
+        }
+
+    }
+
+}
+
+
+function touchEnemies(hero) {
+
+    for (const e of enemies) {
+
+        if (
+            !e.alive ||
+            !rectanglesTouch(
+                hero,
+                e
+            )
+        ) {
+
+            continue;
+
+        }
+
+
+        /*
+        Jump on enemy.
+        */
+
+        if (
+            hero.vy > 0 &&
+            hero.y +
+            hero.h -
+            10 <
+            e.y +
+            10
+        ) {
+
+            e.alive = false;
+
+            hero.vy = -8;
+
+
+            makeParticles(
+                e.x,
+                e.y,
+                "#a855f7",
+                20
+            );
+
+        }
+
+        else {
+
+            damageHero(
+                hero,
+                20
+            );
+
+        }
+
+    }
+
+}
+
+
+/* ========================================
+   SPIKES
+======================================== */
+
+function checkSpikes(hero) {
+
+    for (const s of spikes) {
+
+        if (
+            rectanglesTouch(
+                hero,
+                s
+            )
+        ) {
+
+            damageHero(
+                hero,
+                25
+            );
+
+
+            hero.vy = -8;
+
+
+            hero.x -=
+                hero.facing * 25;
+
+            return;
+
+        }
+
+    }
+
+}
+
+
+/* ========================================
+   DAMAGE
+======================================== */
+
+function damageHero(
+    hero,
+    damage
+) {
+
+    if (
+        hero.invincible > 0 ||
+        !gameRunning
+    ) {
+
+        return;
+
+    }
+
+
+    hero.health -= damage;
+
+    hero.invincible = 80;
+
+
+    makeParticles(
+        hero.x +
+        hero.w / 2,
+        hero.y +
+        hero.h / 2,
+        "#ffffff",
+        15
+    );
+
+
+    if (
+        hero.health <= 0
+    ) {
+
+        hero.health =
+            hero.maxHealth;
+
+
+        respawnHero(hero);
+
+
+        showMessage(
+            hero.heroType ===
+            "azure"
+            ? "AZURE KNIGHT RESCUED!"
+            : "CRIMSON GUARDIAN RESCUED!"
+        );
+
+    }
+
+
+    updateHUD();
+
+}
+
+
+/* ========================================
+   RESPAWN
+======================================== */
+
+function respawnHero(hero) {
+
+    hero.x = hero.spawnX;
+    hero.y = hero.spawnY;
+
+    hero.vx = 0;
+    hero.vy = 0;
+
+    hero.jumps = 0;
+
+}
+
+
+/* ========================================
+   EXIT
+======================================== */
+
+function checkExit(hero) {
+
+    hero.atExit =
+        rectanglesTouch(
+            hero,
+            exitDoor
+        );
+
+
+    if (
+        azure.atExit &&
+        crimson.atExit &&
+        !changingRoom
+    ) {
+
+        completeRoom();
+
+    }
+
+}
+
+
+/* ========================================
+   ROOM COMPLETION
+======================================== */
+
+function completeRoom() {
+
+    changingRoom = true;
+    gameRunning = false;
+
+
+    makeParticles(
+        exitDoor.x +
+        exitDoor.w / 2,
+        exitDoor.y +
+        exitDoor.h / 2,
+        "#fde047",
+        50
+    );
+
+
+    if (room < 4) {
+
+        document
+            .getElementById(
+                "message"
+            )
+            .textContent =
+            "ROOM COMPLETE!";
+
+
+        setTimeout(
+            function() {
+
+                room++;
+
+                loadRoom();
+
+            },
+            1300
+        );
+
+    }
+
+    else {
+
+        document
+            .getElementById(
+                "message"
+            )
+            .textContent =
+            "THE TWIN HEROES ESCAPED THE DUNGEON!";
+
+
+        gameRunning = false;
+
+    }
+
+}
+
+
+/* ========================================
+   COLLISION HELPER
+======================================== */
+
+function rectanglesTouch(a, b) {
+
+    return (
+
+        a.x <
+        b.x + b.w &&
+
+        a.x + a.w >
+        b.x &&
+
+        a.y <
+        b.y + b.h &&
+
+        a.y + a.h >
+        b.y
+
+    );
+
+}
+
+
+/* ========================================
+   PARTICLES
+======================================== */
+
+function makeParticles(
+    x,
+    y,
+    color,
+    amount
+) {
+
+    for (
+        let i = 0;
+        i < amount;
+        i++
+    ) {
+
+        particles.push({
+
+            x,
+            y,
+
+            vx:
+                Math.random() *
+                6 - 3,
+
+            vy:
+                Math.random() *
+                -5 - 1,
+
+            size:
+                Math.random() *
+                5 + 2,
+
+            life: 40,
+
+            color
+
+        });
+
+    }
+
+}
+
+
+function updateParticles() {
+
+    for (
+        const p of
+        particles
+    ) {
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        p.vy += 0.15;
+
+        p.life--;
+
+    }
+
+
+    particles =
+        particles.filter(
+            p =>
+            p.life > 0
+        );
+
+}
+
+
+/* ========================================
+   DRAW DUNGEON
+======================================== */
+
+function drawBackground() {
+
+    const gradient =
+        ctx.createLinearGradient(
+            0,
+            0,
+            0,
+            HEIGHT
+        );
+
+
+    gradient.addColorStop(
+        0,
+        "#111827"
+    );
+
+
+    gradient.addColorStop(
+        1,
+        "#020617"
+    );
+
+
+    ctx.fillStyle =
+        gradient;
+
+
+    ctx.fillRect(
+        0,
+        0,
+        WIDTH,
+        HEIGHT
+    );
+
+
+    /*
+    Dungeon stones.
+    */
+
+    ctx.strokeStyle =
+        "#334155";
+
+
+    ctx.lineWidth = 2;
+
+
+    for (
+        let y = 20;
+        y < HEIGHT;
+        y += 50
+    ) {
+
+        const offset =
+            (y / 50) % 2
+            ? 30
+            : 0;
+
+
+        for (
+            let x = -offset;
+            x < WIDTH;
+            x += 80
+        ) {
+
+            ctx.strokeRect(
+                x,
+                y,
+                78,
+                48
+            );
+
+        }
+
+    }
+
+
+    /*
+    Torches
+    */
+
+    drawTorch(
+        100,
+        120
+    );
+
+
+    drawTorch(
+        850,
+        120
+    );
+
+}
+
+
+function drawTorch(
+    x,
+    y
+) {
+
+    ctx.fillStyle =
+        "#78350f";
+
+
+    ctx.fillRect(
+        x - 4,
+        y,
+        8,
+        30
+    );
+
+
+    const flicker =
+        Math.random() * 3;
+
+
+    ctx.fillStyle =
+        "#f97316";
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        x,
+        y - 7,
+        10 + flicker,
+        0,
+        Math.PI * 2
+    );
+
+
+    ctx.fill();
+
+
+    ctx.fillStyle =
+        "#fde047";
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        x,
+        y - 8,
+        5,
+        0,
+        Math.PI * 2
+    );
+
+
+    ctx.fill();
+
+}
+
+
+/* ========================================
+   DRAW PLATFORM
+======================================== */
+
+function drawPlatforms() {
+
+    for (const p of platforms) {
+
+        ctx.fillStyle =
+            "#475569";
+
+
+        ctx.fillRect(
+            p.x,
+            p.y,
+            p.w,
+            p.h
+        );
+
+
+        ctx.fillStyle =
+            "#64748b";
+
+
+        ctx.fillRect(
+            p.x,
+            p.y,
+            p.w,
+            7
+        );
+
+    }
+
+
+    for (
+        const p of
+        movingPlatforms
+    ) {
+
+        ctx.fillStyle =
+            "#7c3aed";
+
+
+        ctx.fillRect(
+            p.x,
+            p.y,
+            p.w,
+            p.h
+        );
+
+
+        ctx.fillStyle =
+            "#c4b5fd";
+
+
+        ctx.fillRect(
+            p.x + 8,
+            p.y + 5,
+            p.w - 16,
+            4
+        );
+
+    }
+
+}
+
+
+/* ========================================
+   DRAW HERO
+======================================== */
+
+function drawHero(hero) {
+
+    if (
+        hero.invincible > 0 &&
+        Math.floor(
+            hero.invincible /
+            5
+        ) % 2 === 0
+    ) {
+
+        return;
+
+    }
+
+
+    const x = hero.x;
+    const y = hero.y;
+
+
+    /*
+    Ground shadow.
+    */
+
+    ctx.fillStyle =
+        "#00000055";
+
+
+    ctx.beginPath();
+
+
+    ctx.ellipse(
+        x + hero.w / 2,
+        y + hero.h + 3,
+        20,
+        6,
+        0,
+        0,
+        Math.PI * 2
+    );
+
+
+    ctx.fill();
+
+
+    /*
+    Cape.
+    */
+
+    ctx.fillStyle =
+        hero.dark;
+
+
+    const capeMove =
+        hero.vx !== 0
+        ? Math.sin(
+            hero.walkTime
+        ) * 4
+        : 0;
+
+
+    ctx.beginPath();
+
+
+    if (hero.facing === 1) {
+
+        ctx.moveTo(
+            x + 7,
+            y + 20
+        );
+
+        ctx.lineTo(
+            x - 7 - capeMove,
+            y + 48
+        );
+
+        ctx.lineTo(
+            x + 11,
+            y + 45
+        );
+
+    }
+
+    else {
+
+        ctx.moveTo(
+            x + hero.w - 7,
+            y + 20
+        );
+
+        ctx.lineTo(
+            x + hero.w + 7 +
+            capeMove,
+            y + 48
+        );
+
+        ctx.lineTo(
+            x + hero.w - 11,
+            y + 45
+        );
+
+    }
+
+
+    ctx.fill();
+
+
+    /*
+    Animated legs.
+    */
+
+    let legOffset = 0;
+
+
+    if (
+        hero.grounded &&
+        Math.abs(hero.vx) >
+        0.1
+    ) {
+
+        legOffset =
+            Math.sin(
+                hero.walkTime * 2
+            ) * 4;
+
+    }
+
+
+    ctx.fillStyle =
+        hero.dark;
+
+
+    ctx.fillRect(
+        x + 6,
+        y + 40,
+        8,
+        13 + legOffset
+    );
+
+
+    ctx.fillRect(
+        x + 20,
+        y + 40,
+        8,
+        13 - legOffset
+    );
+
+
+    /*
+    Boots.
+    */
+
+    ctx.fillStyle =
+        "#111827";
+
+
+    ctx.fillRect(
+        x + 3,
+        y + 50 + legOffset,
+        12,
+        5
+    );
+
+
+    ctx.fillRect(
+        x + 19,
+        y + 50 - legOffset,
+        12,
+        5
+    );
+
+
+    /*
+    Armor body.
+    */
+
+    ctx.fillStyle =
+        hero.color;
+
+
+    ctx.fillRect(
+        x + 5,
+        y + 20,
+        24,
+        27
+    );
+
+
+    /*
+    Armor trim.
+    */
+
+    ctx.fillStyle =
+        hero.trim;
+
+
+    ctx.fillRect(
+        x + 5,
+        y + 27,
+        24,
+        4
+    );
+
+
+    ctx.fillRect(
+        x + 15,
+        y + 20,
+        4,
+        27
+    );
+
+
+    /*
+    Helmet.
+    */
+
+    ctx.fillStyle =
+        hero.dark;
+
+
+    ctx.fillRect(
+        x + 3,
+        y + 3,
+        28,
+        20
+    );
+
+
+    /*
+    Helmet top.
+    */
+
+    ctx.fillStyle =
+        hero.color;
+
+
+    ctx.fillRect(
+        x + 7,
+        y,
+        20,
+        7
+    );
+
+
+    /*
+    Face opening.
+    */
+
+    ctx.fillStyle =
+        "#fde7c7";
+
+
+    ctx.fillRect(
+        x + 8,
+        y + 10,
+        18,
+        8
+    );
+
+
+    /*
+    Eye.
+    */
+
+    ctx.fillStyle =
+        "#111827";
+
+
+    const eyeX =
+        hero.facing === 1
+        ? x + 21
+        : x + 11;
+
+
+    ctx.fillRect(
+        eyeX,
+        y + 12,
+        3,
+        3
+    );
+
+
+    /*
+    Helmet trim.
+    */
+
+    ctx.fillStyle =
+        hero.trim;
+
+
+    ctx.fillRect(
+        x + 3,
+        y + 19,
+        28,
+        3
+    );
+
+
+    /*
+    Arms.
+    */
+
+    const armSwing =
+        Math.sin(
+            hero.walkTime * 2
+        ) * 4;
+
+
+    ctx.fillStyle =
+        hero.color;
+
+
+    ctx.fillRect(
+        x,
+        y + 24 + armSwing,
+        7,
+        20
+    );
+
+
+    ctx.fillRect(
+        x + 27,
+        y + 24 - armSwing,
+        7,
+        20
+    );
+
+
+    /*
+    Shield differences.
+    */
+
+    if (
+        hero.heroType ===
+        "azure"
+    ) {
+
+        ctx.fillStyle =
+            "#1d4ed8";
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            x - 6,
+            y + 25
+        );
+
+        ctx.lineTo(
+            x + 5,
+            y + 20
+        );
+
+        ctx.lineTo(
+            x + 10,
+            y + 34
+        );
+
+        ctx.lineTo(
+            x + 2,
+            y + 46
+        );
+
+        ctx.lineTo(
+            x - 6,
+            y + 34
+        );
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#facc15";
+
+
+        ctx.fillRect(
+            x,
+            y + 26,
+            3,
+            12
+        );
+
+    }
+
+    else {
+
+        /*
+        Larger Guardian shield.
+        */
+
+        ctx.fillStyle =
+            "#b91c1c";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            x + 38,
+            y + 32,
+            14,
+            0,
+            Math.PI * 2
+        );
+
+
+        ctx.fill();
+
+
+        ctx.strokeStyle =
+            "#d1d5db";
+
+
+        ctx.lineWidth = 3;
+
+        ctx.stroke();
+
+
+        ctx.fillStyle =
+            "#d1d5db";
+
+
+        ctx.fillRect(
+            x + 36,
+            y + 23,
+            4,
+            18
+        );
+
+
+        ctx.fillRect(
+            x + 29,
+            y + 30,
+            18,
+            4
+        );
+
+    }
+
+
+    /*
+    Special ability glow.
+    */
+
+    if (
+        hero.abilityFlash > 0
+    ) {
+
+        ctx.strokeStyle =
+            hero.color;
+
+
+        ctx.lineWidth = 3;
+
+
+        ctx.globalAlpha =
+            hero.abilityFlash /
+            20;
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            x + hero.w / 2,
+            y + hero.h / 2,
+            30 +
+            (20 -
+            hero.abilityFlash),
+            0,
+            Math.PI * 2
+        );
+
+
+        ctx.stroke();
+
+
+        ctx.globalAlpha = 1;
+
+    }
+
+}
+
+
+/* ========================================
+   DRAW ENEMIES
+======================================== */
+
+function drawEnemies() {
+
+    for (const e of enemies) {
+
+        if (!e.alive) {
+            continue;
+        }
+
+
+        ctx.fillStyle =
+            "#701a75";
+
+
+        ctx.fillRect(
+            e.x,
+            e.y,
+            e.w,
+            e.h
+        );
+
+
+        ctx.fillStyle =
+            "#e879f9";
+
+
+        ctx.fillRect(
+            e.x + 5,
+            e.y + 5,
+            e.w - 10,
+            8
+        );
+
+
+        ctx.fillStyle =
+            "#fde047";
+
+
+        ctx.fillRect(
+            e.x + 7,
+            e.y + 17,
+            5,
+            5
+        );
+
+
+        ctx.fillRect(
+            e.x + 23,
+            e.y + 17,
+            5,
+            5
+        );
+
+    }
+
+}
+
+
+/* ========================================
+   DRAW GEMS
+======================================== */
+
+function drawGems() {
+
+    for (const g of gems) {
+
+        if (g.collected) {
+            continue;
+        }
+
+
+        ctx.fillStyle =
+            "#fde047";
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            g.x,
+            g.y - 12
+        );
+
+        ctx.lineTo(
+            g.x + 10,
+            g.y
+        );
+
+        ctx.lineTo(
+            g.x,
+            g.y + 12
+        );
+
+        ctx.lineTo(
+            g.x - 10,
+            g.y
+        );
+
+        ctx.closePath();
+
+        ctx.fill();
+
+
+        ctx.strokeStyle =
+            "#fff7ae";
+
+
+        ctx.stroke();
+
+    }
+
+}
+
+
+/* ========================================
+   DRAW SPIKES
+======================================== */
+
+function drawSpikes() {
+
+    for (const s of spikes) {
+
+        ctx.fillStyle =
+            "#cbd5e1";
+
+
+        for (
+            let x = s.x;
+            x < s.x + s.w;
+            x += 20
+        ) {
+
+            ctx.beginPath();
+
+
+            ctx.moveTo(
+                x,
+                s.y + 20
+            );
+
+
+            ctx.lineTo(
+                x + 10,
+                s.y
+            );
+
+
+            ctx.lineTo(
+                x + 20,
+                s.y + 20
+            );
+
+
+            ctx.fill();
+
+        }
+
+    }
+
+}
+
+
+/* ========================================
+   DRAW RUNES
+======================================== */
+
+function drawRunes() {
+
+    for (const r of runes) {
+
+        const color =
+            r.type === "azure"
+            ? "#38bdf8"
+            : "#fb7185";
+
+
+        ctx.fillStyle =
+            r.active
+            ? "#22c55e"
+            : color;
+
+
+        ctx.fillRect(
+            r.x,
+            r.y,
+            r.w,
+            r.h
+        );
+
+
+        ctx.globalAlpha = 0.3;
+
+
+        ctx.fillStyle = color;
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            r.x + r.w / 2,
+            r.y + r.h / 2,
+            20,
+            0,
+            Math.PI * 2
+        );
+
+
+        ctx.fill();
+
+
+        ctx.globalAlpha = 1;
+
+    }
+
+}
+
+
+/* ========================================
+   DRAW DOORS
+======================================== */
+
+function drawDoors() {
+
+    for (const d of doors) {
+
+        if (d.open) {
+
+            ctx.globalAlpha = 0.15;
+
+        }
+
+
+        ctx.fillStyle =
+            d.color;
+
+
+        ctx.fillRect(
+            d.x,
+            d.y,
+            d.w,
+            d.h
+        );
+
+
+        ctx.fillStyle =
+            "#ffffff55";
+
+
+        for (
+            let y = d.y + 10;
+            y < d.y + d.h;
+            y += 15
+        ) {
+
+            ctx.fillRect(
+                d.x + 5,
+                y,
+                d.w - 10,
+                4
+            );
+
+        }
+
+
+        ctx.globalAlpha = 1;
+
+    }
+
+}
+
+
+/* ========================================
+   DRAW BLOCKS
+======================================== */
+
+function drawBlocks() {
+
+    for (const b of blocks) {
+
+        ctx.fillStyle =
+            "#57534e";
+
+
+        ctx.fillRect(
+            b.x,
+            b.y,
+            b.w,
+            b.h
+        );
+
+
+        ctx.strokeStyle =
+            "#a8a29e";
+
+
+        ctx.lineWidth = 3;
+
+
+        ctx.strokeRect(
+            b.x + 4,
+            b.y + 4,
+            b.w - 8,
+            b.h - 8
+        );
+
+    }
+
+}
+
+
+/* ========================================
+   EXIT
+======================================== */
+
+function drawExit() {
+
+    ctx.fillStyle =
+        "#f59e0b";
+
+
+    ctx.fillRect(
+        exitDoor.x,
+        exitDoor.y,
+        exitDoor.w,
+        exitDoor.h
+    );
+
+
+    ctx.fillStyle =
+        "#451a03";
+
+
+    ctx.fillRect(
+        exitDoor.x + 8,
+        exitDoor.y + 8,
+        exitDoor.w - 16,
+        exitDoor.h - 8
+    );
+
+
+    ctx.fillStyle =
+        "#fde047";
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        exitDoor.x +
+        exitDoor.w - 15,
+        exitDoor.y +
+        exitDoor.h / 2,
+        5,
+        0,
+        Math.PI * 2
+    );
+
+
+    ctx.fill();
+
+
+    ctx.fillStyle =
+        "white";
+
+
+    ctx.font =
+        "bold 13px Arial";
+
+
+    ctx.textAlign =
+        "center";
+
+
+    ctx.fillText(
+        "BOTH HEROES",
+        exitDoor.x +
+        exitDoor.w / 2,
+        exitDoor.y - 10
+    );
+
+}
+
+
+/* ========================================
+   DRAW PARTICLES
+======================================== */
+
+function drawParticles() {
+
+    for (
+        const p of
+        particles
+    ) {
+
+        ctx.globalAlpha =
+            p.life / 40;
+
+
+        ctx.fillStyle =
+            p.color;
+
+
+        ctx.fillRect(
+            p.x,
+            p.y,
+            p.size,
+            p.size
+        );
+
+    }
+
+
+    ctx.globalAlpha = 1;
+
+}
+
+
+/* ========================================
+   DRAW EVERYTHING
+======================================== */
+
+function draw() {
+
+    drawBackground();
+
+    drawPlatforms();
+
+    drawSpikes();
+
+    drawGems();
+
+    drawRunes();
+
+    drawDoors();
+
+    drawBlocks();
+
+    drawEnemies();
+
+    drawExit();
+
+    drawHero(azure);
+
+    drawHero(crimson);
+
+    drawParticles();
+
+}
+
+
+/* ========================================
+   HUD
+======================================== */
+
+function updateHUD() {
+
+    document
+        .getElementById(
+            "roomText"
+        )
+        .textContent =
+        room;
+
+
+    document
+        .getElementById(
+            "treasureText"
+        )
+        .textContent =
+        treasure;
+
+
+    document
+        .getElementById(
+            "keyText"
+        )
+        .textContent =
+        dungeonKeys;
+
+
+    document
+        .getElementById(
+            "p1Health"
+        )
+        .style.width =
+        azure.health + "%";
+
+
+    document
+        .getElementById(
+            "p2Health"
+        )
+        .style.width =
+        crimson.health + "%";
+
+}
+
+
+/* ========================================
+   MESSAGE
+======================================== */
+
+function showMessage(text) {
+
+    document
+        .getElementById(
+            "message"
+        )
+        .textContent =
+        text;
+
+
+    setTimeout(
+        function() {
+
+            if (
+                gameRunning &&
+                !changingRoom
+            ) {
+
+                document
+                    .getElementById(
+                        "message"
+                    )
+                    .textContent =
+                    "";
+
+            }
+
+        },
+        1000
+    );
+
+}
+
+
+/* ========================================
+   RESET HERO POSITIONS
+======================================== */
+
+function resetHeroPositions() {
+
+    azure.spawnX = 70;
+    azure.spawnY = 400;
+
+    crimson.spawnX = 120;
+    crimson.spawnY = 400;
+
+
+    respawnHero(azure);
+    respawnHero(crimson);
+
+
+    azure.atExit = false;
+    crimson.atExit = false;
+
+}
+
+
+/* ========================================
+   RESTART ROOM
+======================================== */
+
+function restartRoom() {
+
+    azure.health = 100;
+    crimson.health = 100;
+
+    loadRoom();
+
+}
+
+
+/* ========================================
+   RESTART GAME
+======================================== */
+
+function restartGame() {
+
+    room = 1;
+
+    treasure = 0;
+    dungeonKeys = 0;
+
+    azure.health = 100;
+    crimson.health = 100;
+
+    loadRoom();
+
+}
+
+
+/* ========================================
+   GAME LOOP
+======================================== */
+
+function gameLoop() {
+
+    if (gameRunning) {
+
+        updateMovingPlatforms();
+
+        updateEnemies();
+
+        updateHero(azure);
+
+        updateHero(crimson);
+
+    }
+
+
+    updateParticles();
+
+    updateHUD();
+
+    draw();
+
+
+    requestAnimationFrame(
+        gameLoop
+    );
+
+}
+
+
+/* ========================================
+   START
+======================================== */
+
+loadRoom();
+
+gameLoop();
+
+</script>
+
+</body>
+</html>
