@@ -740,7 +740,36 @@
     </button>
 
 </div>
+<div class="game-card featured">
 
+    <span class="featured-label">
+        ⭐ FEATURED
+    </span>
+
+    <span class="badge single">
+        1 PLAYER
+    </span>
+
+    <div class="game-icon">
+        🌌
+    </div>
+
+    <h3>Voidbreaker</h3>
+
+    <p>
+        Build your ship, survive enemy waves,
+        evolve your weapons, and battle four
+        massive bosses across the Void.
+    </p>
+
+    <button
+        class="play-button"
+        onclick="window.location.href='voidbreaker.html'"
+    >
+        ENTER THE VOID
+    </button>
+
+</div>
 
     </div>
 
@@ -955,6 +984,577 @@
             </button>
 
         </div>
+
+
+<style>
+
+.starfall-wide-card {
+    position: relative;
+
+    grid-column: 1 / -1;
+
+    width: min(1050px, 100%);
+    min-height: 330px;
+
+    margin: 0 auto;
+    padding: 32px 40px;
+
+    overflow: hidden;
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(220px, .8fr)
+        minmax(350px, 1.6fr);
+
+    align-items: center;
+
+    gap: 35px;
+
+    color: white;
+
+    background:
+        radial-gradient(
+            circle at 12% 25%,
+            #0ea5e955,
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 87% 75%,
+            #7c3aed44,
+            transparent 36%
+        ),
+        linear-gradient(
+            135deg,
+            #061425,
+            #070b18 55%,
+            #17082d
+        );
+
+    border:
+        2px solid #38bdf8;
+
+    border-radius: 22px;
+
+    box-shadow:
+        0 0 28px #0ea5e944,
+        0 22px 60px #000,
+        inset 0 0 50px #020617;
+
+    transition:
+        transform .25s,
+        box-shadow .25s,
+        border-color .25s;
+}
+
+
+.starfall-wide-card:hover {
+    transform:
+        translateY(-7px);
+
+    border-color:
+        #67e8f9;
+
+    box-shadow:
+        0 0 42px #0ea5e977,
+        0 26px 70px #000,
+        inset 0 0 55px #020617;
+}
+
+
+/* stars */
+
+.starfall-wide-card::before {
+    content: "";
+
+    position: absolute;
+    inset: 0;
+
+    pointer-events: none;
+
+    opacity: .25;
+
+    background-image:
+        radial-gradient(
+            #ffffff 1px,
+            transparent 1px
+        );
+
+    background-size:
+        34px 34px;
+}
+
+
+/* planet */
+
+.starfall-wide-card::after {
+    content: "";
+
+    position: absolute;
+
+    width: 220px;
+    height: 220px;
+
+    left: -85px;
+    bottom: -110px;
+
+    border-radius: 50%;
+
+    pointer-events: none;
+
+    background:
+        radial-gradient(
+            circle at 32% 28%,
+            #cffafe,
+            #22d3ee 14%,
+            #2563eb 37%,
+            #312e81 63%,
+            #080018 69%
+        );
+
+    box-shadow:
+        30px -25px 90px #2563eb88;
+
+    opacity: .8;
+}
+
+
+.starfall-wide-card > * {
+    position: relative;
+    z-index: 2;
+}
+
+
+/* LEFT SIDE */
+
+.starfall-wide-left {
+    text-align: center;
+}
+
+
+.starfall-icon {
+    margin-bottom: 5px;
+
+    font-size:
+        clamp(
+            60px,
+            8vw,
+            90px
+        );
+
+    filter:
+        drop-shadow(
+            0 0 20px #38bdf8
+        );
+}
+
+
+.starfall-title {
+    margin: 4px 0;
+
+    color: #e0f2fe;
+
+    font-size:
+        clamp(
+            30px,
+            4vw,
+            44px
+        );
+
+    letter-spacing: 7px;
+
+    text-shadow:
+        0 0 14px #38bdf8,
+        0 0 30px #7c3aed;
+}
+
+
+.starfall-subtitle {
+    color: #67e8f9;
+
+    font-size: 10px;
+
+    font-weight: 900;
+
+    letter-spacing: 2px;
+
+    line-height: 1.5;
+}
+
+
+/* BADGES */
+
+.starfall-badges {
+    display: flex;
+
+    justify-content: center;
+    flex-wrap: wrap;
+
+    gap: 6px;
+
+    margin-top: 14px;
+}
+
+
+.starfall-badge {
+    padding: 6px 9px;
+
+    border-radius: 999px;
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+    letter-spacing: .7px;
+}
+
+
+.starfall-mobile {
+    color: #083344;
+
+    background:
+        linear-gradient(
+            90deg,
+            #67e8f9,
+            #22d3ee
+        );
+
+    border:
+        1px solid #a5f3fc;
+}
+
+
+.starfall-3d {
+    background:
+        linear-gradient(
+            135deg,
+            #7c3aed,
+            #c026d3
+        );
+
+    border:
+        1px solid #e879f9;
+}
+
+
+.starfall-new {
+    color: #422006;
+
+    background:
+        linear-gradient(
+            135deg,
+            #fde047,
+            #f59e0b
+        );
+
+    border:
+        1px solid #fef3c7;
+}
+
+
+/* RIGHT SIDE */
+
+.starfall-wide-right {
+    text-align: left;
+}
+
+
+.starfall-description {
+    max-width: 700px;
+
+    margin:
+        0 0 17px;
+
+    color: #cbd5e1;
+
+    font-size: 14px;
+
+    line-height: 1.6;
+}
+
+
+/* TAGS */
+
+.starfall-tags {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 7px;
+
+    margin-bottom: 18px;
+}
+
+
+.starfall-tags span {
+    padding:
+        6px 9px;
+
+    color: #bae6fd;
+
+    background: #020617bb;
+
+    border:
+        1px solid #0ea5e9;
+
+    border-radius: 999px;
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+    letter-spacing: .7px;
+}
+
+
+/* CONTROL SUMMARY */
+
+.starfall-control-row {
+    margin-bottom: 17px;
+
+    color: #94a3b8;
+
+    font-size: 11px;
+
+    line-height: 1.6;
+}
+
+
+.starfall-control-row strong {
+    color: #e0f2fe;
+}
+
+
+/* PLAY BUTTON */
+
+.starfall-play {
+    display: inline-block;
+
+    min-width: 225px;
+
+    padding:
+        13px 22px;
+
+    color: white;
+
+    background:
+        linear-gradient(
+            135deg,
+            #0284c7,
+            #2563eb,
+            #7c3aed
+        );
+
+    border:
+        1px solid #67e8f9;
+
+    border-radius: 10px;
+
+    box-shadow:
+        0 0 18px #0284c766;
+
+    font-size: 14px;
+
+    font-weight: 900;
+
+    letter-spacing: 1px;
+
+    cursor: pointer;
+
+    transition:
+        transform .2s,
+        box-shadow .2s;
+}
+
+
+.starfall-play:hover {
+    transform:
+        translateY(-3px);
+
+    box-shadow:
+        0 0 28px #22d3eeaa;
+}
+
+
+/* MOBILE */
+
+@media(max-width:700px) {
+
+    .starfall-wide-card {
+        grid-template-columns: 1fr;
+
+        gap: 14px;
+
+        min-height: 0;
+
+        padding:
+            25px 18px;
+
+        text-align: center;
+    }
+
+
+    .starfall-wide-right {
+        text-align: center;
+    }
+
+
+    .starfall-description {
+        margin:
+            0 auto 15px;
+    }
+
+
+    .starfall-tags {
+        justify-content: center;
+    }
+
+
+    .starfall-control-row {
+        text-align: center;
+    }
+
+
+    .starfall-play {
+        width:
+            min(
+                290px,
+                95%
+            );
+    }
+
+
+    .starfall-wide-card::after {
+        width: 150px;
+        height: 150px;
+
+        left: -55px;
+        bottom: -80px;
+
+        opacity: .5;
+    }
+
+}
+
+</style>
+
+
+<div class="starfall-wide-card">
+
+    <!-- LEFT SIDE -->
+
+    <div class="starfall-wide-left">
+
+        <div class="starfall-icon">
+            🌌
+        </div>
+
+        <h3 class="starfall-title">
+            STARFALL
+        </h3>
+
+        <div class="starfall-subtitle">
+            FIRST-PERSON
+            <br>
+            PLANETARY ROGUELITE
+        </div>
+
+        <div class="starfall-badges">
+
+            <span
+                class="
+                    starfall-badge
+                    starfall-new
+                ">
+                ⭐ NEW
+            </span>
+
+            <span
+                class="
+                    starfall-badge
+                    starfall-mobile
+                ">
+                📱 MOBILE + PC
+            </span>
+
+            <span
+                class="
+                    starfall-badge
+                    starfall-3d
+                ">
+                3D
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- RIGHT SIDE -->
+
+    <div class="starfall-wide-right">
+
+        <p class="starfall-description">
+
+            Drop onto hostile alien worlds in first person.
+            Fight waves of creatures, evolve your plasma
+            rifle into powerful builds, dodge incoming fire,
+            unleash Nova energy, and take down massive
+            planetary guardians.
+
+        </p>
+
+
+        <div class="starfall-tags">
+
+            <span>
+                🔫 FIRST PERSON
+            </span>
+
+            <span>
+                🪐 3D PLANETS
+            </span>
+
+            <span>
+                🧬 UPGRADES
+            </span>
+
+            <span>
+                👑 GUARDIANS
+            </span>
+
+            <span>
+                📱 TOUCH
+            </span>
+
+        </div>
+
+
+        <div class="starfall-control-row">
+
+            <strong>📱 Mobile:</strong>
+            joystick + drag-to-look + Fire / Dodge / Nova
+
+            <br>
+
+            <strong>💻 Desktop:</strong>
+            WASD + mouse + left click + Space + E
+
+        </div>
+
+
+        <button
+            class="starfall-play"
+            onclick="
+                window.location.href='starfall.html'
+            ">
+
+            🚀 BEGIN DESCENT
+
+        </button>
+
+    </div>
+
+</div>
 
 
     </div>
