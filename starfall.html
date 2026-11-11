@@ -1,0 +1,3678 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+
+<title>STARFALL: First Person</title>
+
+<style>
+*{
+box-sizing:border-box;
+touch-action:none
+}
+
+html,body{
+margin:0;
+width:100%;
+height:100%;
+overflow:hidden;
+background:#02040a;
+color:#fff;
+font-family:Arial,sans-serif
+}
+
+#world{
+position:fixed;
+inset:0
+}
+
+#hud{
+position:fixed;
+inset:0;
+pointer-events:none;
+padding:12px;
+display:flex;
+justify-content:space-between;
+text-shadow:0 2px 5px #000
+}
+
+.panel{
+height:max-content;
+padding:9px 12px;
+background:#07111dcc;
+border:1px solid #60a5fa88;
+border-radius:12px
+}
+
+.name{
+font-weight:900;
+letter-spacing:4px;
+color:#dbeafe
+}
+
+.small{
+font-size:12px;
+color:#bfdbfe
+}
+
+.bar{
+width:min(290px,45vw);
+height:11px;
+margin-top:6px;
+background:#111827;
+border:1px solid #64748b;
+border-radius:99px;
+overflow:hidden
+}
+
+.fill{
+height:100%;
+transition:width .12s
+}
+
+.hp{
+background:linear-gradient(90deg,#be123c,#fb7185)
+}
+
+.xp{
+background:linear-gradient(90deg,#0369a1,#67e8f9)
+}
+
+#bossWrap{
+display:none;
+position:fixed;
+top:72px;
+left:50%;
+width:min(600px,78vw);
+transform:translateX(-50%);
+text-align:center;
+pointer-events:none
+}
+
+.boss{
+background:linear-gradient(90deg,#991b1b,#f97316,#fde047)
+}
+
+#cross{
+position:fixed;
+left:50%;
+top:50%;
+width:22px;
+height:22px;
+margin:-11px;
+pointer-events:none
+}
+
+#cross:before,
+#cross:after{
+content:"";
+position:absolute;
+background:#fff;
+box-shadow:0 0 7px #38bdf8
+}
+
+#cross:before{
+left:10px;
+top:0;
+width:2px;
+height:22px
+}
+
+#cross:after{
+left:0;
+top:10px;
+width:22px;
+height:2px
+}
+
+#hit{
+position:fixed;
+left:50%;
+top:50%;
+color:#fff;
+font-size:27px;
+pointer-events:none;
+opacity:0;
+transform:translate(-50%,-50%) rotate(45deg)
+}
+
+#damage{
+position:fixed;
+inset:0;
+pointer-events:none;
+opacity:0;
+background:radial-gradient(circle,transparent 45%,#ef4444aa)
+}
+
+#msg{
+position:fixed;
+left:50%;
+top:20%;
+transform:translate(-50%,-50%);
+font-size:clamp(24px,5vw,52px);
+font-weight:900;
+letter-spacing:6px;
+text-align:center;
+text-shadow:0 0 20px #38bdf8,0 3px 6px #000;
+opacity:0;
+pointer-events:none
+}
+
+.overlay{
+position:fixed;
+inset:0;
+z-index:30;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:18px;
+background:radial-gradient(circle,#10233ddd,#02040af7 70%)
+}
+
+.hidden{
+display:none
+}
+
+.box{
+width:min(900px,96vw);
+max-height:92vh;
+overflow:auto;
+padding:25px;
+text-align:center;
+background:#07111eee;
+border:1px solid #60a5fa;
+border-radius:18px;
+box-shadow:0 0 45px #2563eb55
+}
+
+.box h1{
+margin:0;
+color:#e0f2fe;
+font-size:clamp(44px,9vw,88px);
+letter-spacing:10px;
+text-shadow:0 0 20px #38bdf8,0 0 50px #7c3aed
+}
+
+.box h2{
+color:#bae6fd;
+letter-spacing:4px
+}
+
+.box p{
+color:#cbd5e1;
+line-height:1.55
+}
+
+.choices{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:12px
+}
+
+.choice{
+padding:15px;
+background:linear-gradient(145deg,#172554,#111827);
+border:1px solid #3b82f6;
+border-radius:13px;
+cursor:pointer
+}
+
+.choice:hover{
+transform:translateY(-4px);
+box-shadow:0 0 20px #3b82f6
+}
+
+.choice b{
+display:block;
+color:#67e8f9;
+font-size:18px;
+margin:7px
+}
+
+.icon{
+font-size:33px
+}
+
+button{
+padding:13px 22px;
+margin:7px;
+color:#fff;
+font-weight:800;
+border:1px solid #67e8f9;
+border-radius:10px;
+background:linear-gradient(135deg,#0369a1,#7c3aed);
+cursor:pointer
+}
+
+.tips{
+font-size:13px;
+color:#94a3b8!important
+}
+
+#mobile{
+display:none;
+position:fixed;
+inset:0;
+z-index:15;
+pointer-events:none
+}
+
+.stick{
+position:absolute;
+left:18px;
+bottom:22px;
+width:125px;
+height:125px;
+border:2px solid #ffffff44;
+border-radius:50%;
+background:#0f172a55;
+pointer-events:auto
+}
+
+.stick:after{
+content:"";
+position:absolute;
+left:39px;
+top:39px;
+width:43px;
+height:43px;
+border-radius:50%;
+background:#ffffff77;
+transform:translate(var(--x,0px),var(--y,0px))
+}
+
+#lookPad{
+position:absolute;
+right:0;
+top:0;
+width:55%;
+height:100%;
+pointer-events:auto
+}
+
+.mBtn{
+position:absolute;
+right:20px;
+width:70px;
+height:70px;
+padding:0;
+border-radius:50%;
+pointer-events:auto;
+font-size:11px
+}
+
+.fire{
+bottom:22px
+}
+
+.dodge{
+bottom:104px
+}
+
+.ability{
+right:102px;
+bottom:30px
+}
+
+.rotate{
+display:none;
+position:fixed;
+inset:0;
+z-index:99;
+background:#02040a;
+align-items:center;
+justify-content:center;
+text-align:center;
+padding:28px;
+font-size:25px
+}
+
+@media(pointer:coarse){
+#mobile{
+display:block
+}
+}
+
+@media(max-width:720px){
+.choices{
+grid-template-columns:1fr
+}
+
+.stick{
+width:110px;
+height:110px;
+left:10px
+}
+
+.stick:after{
+left:33px;
+top:33px
+}
+
+.mBtn{
+width:61px;
+height:61px;
+right:12px
+}
+
+.dodge{
+bottom:94px
+}
+
+.ability{
+right:82px
+}
+}
+
+@media(orientation:portrait) and (pointer:coarse){
+.rotate{
+display:flex
+}
+}
+</style>
+</head>
+
+<body>
+
+<div id="world"></div>
+
+<div id="hud">
+
+<div class="panel">
+
+<div class="name">
+STARFALL
+</div>
+
+<div class="small">
+
+<span id="planet">
+VERDANT MOON
+</span>
+
+• WAVE
+
+<span id="wave">
+1
+</span>
+
+</div>
+
+<div class="bar">
+<div id="hp" class="fill hp"></div>
+</div>
+
+<div class="bar">
+<div id="xp" class="fill xp"></div>
+</div>
+
+</div>
+
+<div class="panel small">
+
+SCORE
+<b id="score">0</b>
+
+<br>
+
+LEVEL
+<b id="level">1</b>
+
+<br>
+
+BEST
+<b id="best">0</b>
+
+</div>
+
+</div>
+
+<div id="bossWrap">
+
+<div id="bossName">
+GUARDIAN
+</div>
+
+<div class="bar" style="width:100%">
+<div id="boss" class="fill boss"></div>
+</div>
+
+</div>
+
+<div id="cross"></div>
+<div id="hit">×</div>
+<div id="damage"></div>
+<div id="msg"></div>
+
+<div id="menu" class="overlay">
+
+<div class="box">
+
+<h1>STARFALL</h1>
+
+<h2>
+FIRST-PERSON PLANETARY ROGUELITE
+</h2>
+
+<p>
+Fight across alien worlds, evolve your weapon,
+and destroy each planet guardian.
+</p>
+
+<button onclick="startGame()">
+BEGIN DESCENT
+</button>
+
+<p class="tips">
+
+<b>Desktop:</b>
+click to capture mouse • WASD move •
+hold left click fire • Space dodge • E nova
+
+<br>
+
+<b>Mobile:</b>
+left stick move • drag right side to look •
+Fire, Dodge, and Nova buttons
+
+</p>
+
+</div>
+</div>
+
+<div id="upgrade" class="overlay hidden">
+
+<div class="box">
+
+<h2>
+CHOOSE AN EVOLUTION
+</h2>
+
+<div id="choices" class="choices"></div>
+
+</div>
+</div>
+
+<div id="end" class="overlay hidden">
+
+<div class="box">
+
+<h2>
+SIGNAL LOST
+</h2>
+
+<p id="endText"></p>
+
+<button onclick="startGame()">
+PLAY AGAIN
+</button>
+
+<button onclick="showMenu()">
+MAIN MENU
+</button>
+
+</div>
+</div>
+
+<div id="mobile">
+
+<div id="moveStick" class="stick"></div>
+
+<div id="lookPad"></div>
+
+<button id="fireBtn" class="mBtn fire">
+FIRE
+</button>
+
+<button id="dodgeBtn" class="mBtn dodge">
+DODGE
+</button>
+
+<button id="abilityBtn" class="mBtn ability">
+NOVA
+</button>
+
+</div>
+
+<div class="rotate">
+Rotate your phone to landscape to play STARFALL.
+</div>
+
+<script type="module">
+
+import * as THREE
+from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+
+
+const $ =
+id =>
+document.getElementById(id);
+
+const mount =
+$("world");
+
+let scene;
+let camera;
+let renderer;
+let clock;
+let weapon;
+let muzzle;
+
+let keys = {};
+
+let moving = {
+x:0,
+y:0
+};
+
+let yaw = 0;
+let pitch = 0;
+
+let locked = false;
+let firing = false;
+
+let state = "menu";
+
+let planet = 0;
+let wave = 1;
+
+let score = 0;
+let level = 1;
+
+let xp = 0;
+let nextXp = 65;
+
+let best =
+Number(
+localStorage.starfallFPSBest
+) || 0;
+
+let enemies = [];
+let shots = [];
+let bad = [];
+let fx = [];
+
+let spawnLeft = 0;
+let spawnClock = 0;
+
+let boss = null;
+let damageFade = 0;
+
+
+const worlds = [
+
+{
+name:"VERDANT MOON",
+sky:0x061b17,
+fog:0x123a31,
+floor:0x244b34,
+accent:0x34d399
+},
+
+{
+name:"ASH DUNES",
+sky:0x211006,
+fog:0x6b2b12,
+floor:0x75411f,
+accent:0xf59e0b
+},
+
+{
+name:"CRYO-7",
+sky:0x061426,
+fog:0x164e63,
+floor:0x31566d,
+accent:0x67e8f9
+}
+
+];
+
+
+const stats = {
+
+hp:120,
+max:120,
+
+speed:7,
+
+damage:18,
+rate:.2,
+
+crit:.08,
+
+count:1,
+spread:.025,
+
+pierce:0,
+
+dodge:0,
+inv:0,
+
+nova:0,
+power:1
+
+};
+
+
+const ups = [
+
+[
+"⚡",
+"Rapid Core",
+"Fire 18% faster",
+() =>
+stats.rate =
+Math.max(
+.065,
+stats.rate*.82
+)
+],
+
+[
+"🔷",
+"Prism Array",
+"Add two projectiles",
+() =>
+stats.count =
+Math.min(
+7,
+stats.count+2
+)
+],
+
+[
+"💥",
+"Overcharged Rounds",
+"Increase damage by 35%",
+() =>
+stats.damage *=
+1.35
+],
+
+[
+"❤️",
+"Bio Weave",
+"Increase health and heal",
+() => {
+
+stats.max += 35;
+
+stats.hp =
+Math.min(
+stats.max,
+stats.hp + 55
+);
+
+}
+],
+
+[
+"🚀",
+"Vector Drive",
+"Move 15% faster",
+() =>
+stats.speed *=
+1.15
+],
+
+[
+"🎯",
+"Critical Matrix",
+"Gain critical chance",
+() =>
+stats.crit =
+Math.min(
+.7,
+stats.crit+.12
+)
+],
+
+[
+"☄️",
+"Phase Ammo",
+"Projectiles pierce",
+() =>
+stats.pierce++
+],
+
+[
+"🌌",
+"Nova Module",
+"Strengthen Nova",
+() =>
+stats.power += .45
+]
+
+];
+
+
+function init(){
+
+scene =
+new THREE.Scene();
+
+camera =
+new THREE.PerspectiveCamera(
+72,
+innerWidth/innerHeight,
+.05,
+300
+);
+
+camera.rotation.order =
+"YXZ";
+
+camera.position.set(
+0,
+1.65,
+0
+);
+
+renderer =
+new THREE.WebGLRenderer({
+antialias:true
+});
+
+renderer.setPixelRatio(
+Math.min(
+devicePixelRatio,
+1.6
+)
+);
+
+renderer.setSize(
+innerWidth,
+innerHeight
+);
+
+renderer.shadowMap.enabled =
+true;
+
+mount.appendChild(
+renderer.domElement
+);
+
+clock =
+new THREE.Clock();
+
+addInputs();
+
+buildWorld();
+
+animate();
+
+}
+
+
+function buildWorld(){
+
+scene.clear();
+
+const world =
+worlds[planet];
+
+scene.background =
+new THREE.Color(
+world.sky
+);
+
+scene.fog =
+new THREE.FogExp2(
+world.fog,
+.025
+);
+
+scene.add(
+new THREE.HemisphereLight(
+0xcffafe,
+0x101018,
+1.45
+)
+);
+
+const sun =
+new THREE.DirectionalLight(
+0xffffff,
+2.2
+);
+
+sun.position.set(
+12,
+18,
+8
+);
+
+sun.castShadow =
+true;
+
+scene.add(
+sun
+);
+
+
+const floor =
+new THREE.Mesh(
+
+new THREE.CircleGeometry(
+28,
+64
+),
+
+new THREE.MeshStandardMaterial({
+color:world.floor,
+roughness:.92
+})
+
+);
+
+floor.rotation.x =
+-Math.PI/2;
+
+floor.receiveShadow =
+true;
+
+scene.add(
+floor
+);
+
+
+const edge =
+new THREE.Mesh(
+
+new THREE.TorusGeometry(
+27,
+.22,
+8,
+96
+),
+
+new THREE.MeshBasicMaterial({
+color:world.accent
+})
+
+);
+
+edge.rotation.x =
+Math.PI/2;
+
+edge.position.y =
+.05;
+
+scene.add(
+edge
+);
+
+
+for(
+let i=0;
+i<65;
+i++
+){
+
+const angle =
+Math.random()*6.28;
+
+const radius =
+4+Math.random()*22;
+
+const height =
+.5+Math.random()*3;
+
+const geometry =
+i%4
+
+?
+
+new THREE.DodecahedronGeometry(
+.25+Math.random()*.7
+)
+
+:
+
+new THREE.CylinderGeometry(
+.2,
+.7,
+height,
+6
+);
+
+
+const material =
+new THREE.MeshStandardMaterial({
+
+color:
+i%4
+? world.floor
+: world.accent,
+
+roughness:.8
+
+});
+
+
+const object =
+new THREE.Mesh(
+geometry,
+material
+);
+
+
+object.position.set(
+
+Math.cos(angle)*radius,
+
+height/2,
+
+Math.sin(angle)*radius
+
+);
+
+object.castShadow =
+true;
+
+scene.add(
+object
+);
+
+}
+
+
+for(
+let i=0;
+i<170;
+i++
+){
+
+const star =
+new THREE.Mesh(
+
+new THREE.SphereGeometry(
+.03+Math.random()*.05,
+5,
+5
+),
+
+new THREE.MeshBasicMaterial({
+color:0xffffff
+})
+
+);
+
+const angle =
+Math.random()*6.28;
+
+const radius =
+35+Math.random()*80;
+
+star.position.set(
+
+Math.cos(angle)*radius,
+
+8+Math.random()*45,
+
+Math.sin(angle)*radius
+
+);
+
+scene.add(
+star
+);
+
+}
+
+
+scene.add(
+camera
+);
+
+makeWeapon();
+
+}
+
+
+function makeWeapon(){
+
+weapon =
+new THREE.Group();
+
+
+const body =
+new THREE.Mesh(
+
+new THREE.BoxGeometry(
+.32,
+.28,
+1.25
+),
+
+new THREE.MeshStandardMaterial({
+
+color:0x334155,
+
+metalness:.8,
+
+roughness:.25
+
+})
+
+);
+
+
+const barrel =
+new THREE.Mesh(
+
+new THREE.CylinderGeometry(
+.08,
+.11,
+.65,
+10
+),
+
+new THREE.MeshStandardMaterial({
+
+color:0x94a3b8,
+
+metalness:1
+
+})
+
+);
+
+barrel.rotation.x =
+Math.PI/2;
+
+barrel.position.z =
+-.88;
+
+
+const core =
+new THREE.Mesh(
+
+new THREE.BoxGeometry(
+.18,
+.14,
+.38
+),
+
+new THREE.MeshStandardMaterial({
+
+color:0x67e8f9,
+
+emissive:0x0284c7,
+
+emissiveIntensity:2
+
+})
+
+);
+
+core.position.set(
+0,
+.12,
+-.2
+);
+
+
+muzzle =
+new THREE.PointLight(
+0x67e8f9,
+0,
+4
+);
+
+muzzle.position.z =
+-1.2;
+
+
+weapon.add(
+body,
+barrel,
+core,
+muzzle
+);
+
+weapon.position.set(
+.43,
+-.35,
+-.8
+);
+
+camera.add(
+weapon
+);
+
+}
+
+
+function startGame(){
+
+document
+.querySelectorAll(
+".overlay"
+)
+.forEach(
+overlay =>
+overlay.classList.add(
+"hidden"
+)
+);
+
+state =
+"play";
+
+planet =
+0;
+
+wave =
+1;
+
+score =
+0;
+
+level =
+1;
+
+xp =
+0;
+
+nextXp =
+65;
+
+yaw =
+0;
+
+pitch =
+0;
+
+
+Object.assign(
+stats,
+{
+
+hp:120,
+max:120,
+
+speed:7,
+
+damage:18,
+rate:.2,
+
+crit:.08,
+
+count:1,
+spread:.025,
+
+pierce:0,
+
+dodge:0,
+inv:0,
+
+nova:0,
+power:1
+
+}
+);
+
+
+clearActors();
+
+buildWorld();
+
+camera.position.set(
+0,
+1.65,
+0
+);
+
+startWave();
+
+hud();
+
+message(
+"VERDANT MOON"
+);
+
+
+if(
+matchMedia(
+"(pointer:fine)"
+).matches
+){
+
+renderer
+.domElement
+.requestPointerLock();
+
+}
+
+}
+
+
+function clearActors(){
+
+[
+...enemies,
+...shots,
+...bad,
+...fx
+]
+.forEach(
+object =>
+scene.remove(
+object.mesh
+)
+);
+
+enemies=[];
+shots=[];
+bad=[];
+fx=[];
+
+boss=null;
+
+$("bossWrap")
+.style.display =
+"none";
+
+}
+
+
+function startWave(){
+
+spawnLeft =
+wave%5===0
+? 1
+: 5+wave*2;
+
+spawnClock =
+.35;
+
+message(
+
+wave%5===0
+
+? "GUARDIAN DETECTED"
+
+: "WAVE "+wave
+
+);
+
+}
+
+
+function spawn(
+isBoss=false
+){
+
+const world =
+worlds[planet];
+
+const geometry =
+isBoss
+
+?
+
+new THREE.OctahedronGeometry(
+2.1,
+1
+)
+
+:
+
+new THREE.IcosahedronGeometry(
+.55+Math.random()*.35,
+1
+);
+
+
+const material =
+new THREE.MeshStandardMaterial({
+
+color:
+isBoss
+? 0xef4444
+: world.accent,
+
+emissive:
+isBoss
+? 0x7f1d1d
+: world.accent,
+
+emissiveIntensity:.4,
+
+metalness:.4
+
+});
+
+
+const mesh =
+new THREE.Mesh(
+geometry,
+material
+);
+
+
+const angle =
+Math.random()*6.28;
+
+const radius =
+19+Math.random()*5;
+
+
+mesh.position.set(
+
+Math.cos(angle)*radius,
+
+isBoss
+? 2.2
+: .75,
+
+Math.sin(angle)*radius
+
+);
+
+scene.add(
+mesh
+);
+
+
+const health =
+isBoss
+
+? 550+wave*80
+
+: 32+wave*10;
+
+
+const enemy = {
+
+mesh,
+
+hp:health,
+
+max:health,
+
+speed:
+isBoss
+? 1.1
+: 1.3+Math.random()*.8,
+
+cd:
+isBoss
+? 1.5
+: 1.8+Math.random(),
+
+boss:isBoss
+
+};
+
+
+enemies.push(
+enemy
+);
+
+
+if(
+isBoss
+){
+
+boss =
+enemy;
+
+$("bossWrap")
+.style.display =
+"block";
+
+
+$("bossName")
+.textContent =
+
+[
+"VERDANT COLOSSUS",
+"DUNE REAVER",
+"CRYO WARDEN"
+][planet];
+
+}
+
+}
+
+
+function shoot(){
+
+if(
+state!=="play"
+){
+
+return;
+
+}
+
+
+const forward =
+new THREE.Vector3();
+
+camera.getWorldDirection(
+forward
+);
+
+
+for(
+let i=0;
+i<stats.count;
+i++
+){
+
+const direction =
+forward.clone();
+
+
+direction.x +=
+
+(
+Math.random()-.5
+)
+*
+stats.spread
+
++
+
+(
+i-(stats.count-1)/2
+)
+*
+stats.spread;
+
+
+direction.y +=
+(
+Math.random()-.5
+)
+*
+stats.spread;
+
+
+direction.z +=
+(
+Math.random()-.5
+)
+*
+stats.spread;
+
+
+direction.normalize();
+
+
+const mesh =
+new THREE.Mesh(
+
+new THREE.SphereGeometry(
+.09,
+6,
+6
+),
+
+new THREE.MeshBasicMaterial({
+color:0x67e8f9
+})
+
+);
+
+
+mesh.position
+.copy(
+camera.position
+)
+.addScaledVector(
+direction,
+.8
+);
+
+
+scene.add(
+mesh
+);
+
+
+shots.push({
+
+mesh,
+
+vel:
+direction
+.multiplyScalar(
+28
+),
+
+life:2.4,
+
+d:
+stats.damage
+*
+(
+Math.random()<stats.crit
+?2
+:1
+),
+
+p:
+stats.pierce
+
+});
+
+}
+
+
+muzzle.intensity =
+9;
+
+
+weapon.position.z =
+-.72;
+
+
+camera.userData.fire =
+stats.rate;
+
+}
+function enemyShoot(e){
+
+let d =
+camera.position
+.clone()
+.sub(
+e.mesh.position
+)
+.normalize();
+
+let count =
+e.boss
+? 7
+: 1;
+
+
+for(
+let i=0;
+i<count;
+i++
+){
+
+let v =
+d.clone()
+.applyAxisAngle(
+
+new THREE.Vector3(
+0,
+1,
+0
+),
+
+(
+i-(count-1)/2
+)
+*
+(
+e.boss
+? .13
+: 0
+)
+
+);
+
+
+let mesh =
+new THREE.Mesh(
+
+new THREE.SphereGeometry(
+
+e.boss
+? .16
+: .11,
+
+6,
+6
+
+),
+
+new THREE.MeshBasicMaterial({
+
+color:
+e.boss
+? 0xf97316
+: 0xfb7185
+
+})
+
+);
+
+
+mesh.position.copy(
+e.mesh.position
+);
+
+
+scene.add(
+mesh
+);
+
+
+bad.push({
+
+mesh,
+
+vel:
+v.multiplyScalar(
+e.boss
+? 7
+: 9
+),
+
+life:5,
+
+d:
+e.boss
+? 15
+: 9
+
+});
+
+}
+
+}
+
+
+function hitEnemy(
+e,
+d
+){
+
+e.hp -= d;
+
+hitMark();
+
+
+if(
+e.hp <= 0
+){
+
+let pos =
+e.mesh.position.clone();
+
+
+scene.remove(
+e.mesh
+);
+
+
+enemies.splice(
+
+enemies.indexOf(e),
+
+1
+
+);
+
+
+score +=
+e.boss
+? 1500
+: 100;
+
+
+gain(
+
+e.boss
+? 100
+: 14
+
+);
+
+
+burst(
+
+pos,
+
+e.boss
+? 0xfbbf24
+: worlds[planet].accent,
+
+e.boss
+? 35
+: 10
+
+);
+
+
+if(
+e.boss
+){
+
+boss =
+null;
+
+
+$("bossWrap")
+.style.display =
+"none";
+
+
+wave++;
+
+
+if(
+wave % 5 === 1
+){
+
+planet =
+(
+planet+1
+)
+%
+worlds.length;
+
+
+buildWorld();
+
+
+camera.position.set(
+0,
+1.65,
+0
+);
+
+}
+
+
+startWave();
+
+}
+
+else if(
+enemies.length === 0 &&
+spawnLeft <= 0
+){
+
+wave++;
+
+startWave();
+
+}
+
+}
+
+}
+
+
+function gain(
+amount
+){
+
+xp += amount;
+
+
+if(
+xp >= nextXp
+){
+
+xp -=
+nextXp;
+
+
+nextXp =
+Math.floor(
+nextXp*1.3
+);
+
+
+level++;
+
+
+upgrade();
+
+}
+
+
+hud();
+
+}
+
+
+function upgrade(){
+
+state =
+"upgrade";
+
+
+let pool =
+[
+...ups
+];
+
+
+let list =
+[];
+
+
+while(
+list.length < 3
+){
+
+list.push(
+
+pool.splice(
+
+Math.floor(
+Math.random()*
+pool.length
+),
+
+1
+
+)[0]
+
+);
+
+}
+
+
+$("choices")
+.innerHTML =
+"";
+
+
+list.forEach(
+u => {
+
+let choice =
+document.createElement(
+"div"
+);
+
+
+choice.className =
+"choice";
+
+
+choice.innerHTML = `
+
+<div class="icon">
+${u[0]}
+</div>
+
+<b>
+${u[1]}
+</b>
+
+<p>
+${u[2]}
+</p>
+
+`;
+
+
+choice.onclick =
+() => {
+
+u[3]();
+
+
+$("upgrade")
+.classList
+.add(
+"hidden"
+);
+
+
+state =
+"play";
+
+
+if(
+matchMedia(
+"(pointer:fine)"
+).matches
+){
+
+renderer
+.domElement
+.requestPointerLock();
+
+}
+
+};
+
+
+$("choices")
+.appendChild(
+choice
+);
+
+}
+);
+
+
+$("upgrade")
+.classList
+.remove(
+"hidden"
+);
+
+
+if(
+document.exitPointerLock
+){
+
+document.exitPointerLock();
+
+}
+
+}
+
+
+function dodge(){
+
+if(
+state !== "play" ||
+stats.dodge > 0
+){
+
+return;
+
+}
+
+
+stats.dodge =
+1.05;
+
+
+stats.inv =
+.35;
+
+
+let velocity =
+moveVector();
+
+
+if(
+!velocity.lengthSq()
+){
+
+camera.getWorldDirection(
+velocity
+);
+
+
+velocity.y =
+0;
+
+
+velocity.normalize();
+
+}
+
+
+camera.userData.dash =
+velocity.multiplyScalar(
+20
+);
+
+
+burst(
+camera.position,
+0x67e8f9,
+16
+);
+
+}
+
+
+function nova(){
+
+if(
+state !== "play" ||
+stats.nova > 0
+){
+
+return;
+
+}
+
+
+stats.nova =
+7;
+
+
+enemies
+.slice()
+.forEach(
+e => {
+
+if(
+e.mesh.position
+.distanceTo(
+camera.position
+)
+<
+7 *
+stats.power
+){
+
+hitEnemy(
+
+e,
+
+stats.damage *
+4 *
+stats.power
+
+);
+
+}
+
+}
+);
+
+
+burst(
+camera.position,
+0xa78bfa,
+40
+);
+
+}
+
+
+function moveVector(){
+
+let x =
+(
+keys.d
+? 1
+: 0
+)
+-
+(
+keys.a
+? 1
+: 0
+)
++
+moving.x;
+
+
+let z =
+(
+keys.s
+? 1
+: 0
+)
+-
+(
+keys.w
+? 1
+: 0
+)
++
+moving.y;
+
+
+let forward =
+new THREE.Vector3(
+
+-Math.sin(
+yaw
+),
+
+0,
+
+-Math.cos(
+yaw
+)
+
+);
+
+
+let right =
+new THREE.Vector3(
+
+Math.cos(
+yaw
+),
+
+0,
+
+-Math.sin(
+yaw
+)
+
+);
+
+
+let vector =
+forward
+.multiplyScalar(
+-z
+)
+.add(
+
+right
+.multiplyScalar(
+x
+)
+
+);
+
+
+return (
+vector.length() > 1
+
+? vector.normalize()
+
+: vector
+);
+
+}
+
+
+function update(
+dt
+){
+
+if(
+state !== "play"
+){
+
+return;
+
+}
+
+
+stats.dodge =
+Math.max(
+0,
+stats.dodge-dt
+);
+
+
+stats.inv =
+Math.max(
+0,
+stats.inv-dt
+);
+
+
+stats.nova =
+Math.max(
+0,
+stats.nova-dt
+);
+
+
+camera.rotation.y =
+yaw;
+
+
+camera.rotation.x =
+pitch;
+
+
+let movement =
+moveVector();
+
+
+if(
+camera.userData.dash
+){
+
+movement =
+camera.userData.dash;
+
+
+camera.userData.dash
+.multiplyScalar(
+
+Math.pow(
+.025,
+dt
+)
+
+);
+
+
+if(
+camera.userData.dash
+.length() < 1
+){
+
+camera.userData.dash =
+null;
+
+}
+
+}
+
+else{
+
+movement
+.multiplyScalar(
+stats.speed
+);
+
+}
+
+
+camera.position
+.addScaledVector(
+movement,
+dt
+);
+
+
+camera.position.y =
+1.65;
+
+
+let radius =
+Math.hypot(
+
+camera.position.x,
+camera.position.z
+
+);
+
+
+if(
+radius > 26
+){
+
+camera.position.x *=
+26/radius;
+
+
+camera.position.z *=
+26/radius;
+
+}
+
+
+camera.userData.fire =
+(
+camera.userData.fire ||
+0
+)
+-
+dt;
+
+
+if(
+firing &&
+camera.userData.fire <= 0
+){
+
+shoot();
+
+}
+
+
+/* muzzle flash and recoil */
+
+muzzle.intensity *=
+.65;
+
+
+weapon.position.z +=
+(
+-.8 -
+weapon.position.z
+)
+*
+.25;
+
+
+/* subtle weapon movement while walking */
+
+weapon.position.y =
+-.35
++
+Math.sin(
+performance.now()*.01
+)
+*
+(
+movement.length() > .1
+? .018
+: 0
+);
+
+
+/* enemy spawning */
+
+if(
+spawnLeft > 0
+){
+
+spawnClock -=
+dt;
+
+
+if(
+spawnClock <= 0
+){
+
+spawn(
+wave%5 === 0
+);
+
+
+spawnLeft--;
+
+
+spawnClock =
+wave%5 === 0
+
+? 99
+
+: Math.max(
+
+.25,
+
+.85 -
+wave*.025
+
+);
+
+}
+
+}
+
+
+/* enemies */
+
+for(
+const e of
+enemies.slice()
+){
+
+let direction =
+camera.position
+.clone()
+.sub(
+e.mesh.position
+);
+
+
+let distance =
+direction.length();
+
+
+direction.y =
+0;
+
+
+direction.normalize();
+
+
+e.mesh.position
+.addScaledVector(
+
+direction,
+
+e.speed *
+dt
+
+);
+
+
+e.mesh.lookAt(
+
+camera.position.x,
+
+e.mesh.position.y,
+
+camera.position.z
+
+);
+
+
+e.cd -=
+dt;
+
+
+if(
+e.cd <= 0 &&
+distance < 17
+){
+
+enemyShoot(
+e
+);
+
+
+e.cd =
+e.boss
+
+? 1.25
+
+: 1.8 +
+Math.random()*.7;
+
+}
+
+
+if(
+distance <
+(
+e.boss
+? 2.5
+: .9
+)
+){
+
+hurt(
+
+e.boss
+? 20
+: 10
+
+);
+
+}
+
+}
+
+
+/* player projectiles */
+
+for(
+const bullet of
+shots.slice()
+){
+
+bullet.mesh.position
+.addScaledVector(
+
+bullet.vel,
+
+dt
+
+);
+
+
+bullet.life -=
+dt;
+
+
+let remove =
+bullet.life <= 0;
+
+
+for(
+const e of
+enemies.slice()
+){
+
+let distance =
+bullet.mesh.position
+.distanceTo(
+e.mesh.position
+);
+
+
+if(
+distance <
+(
+e.boss
+? 2.1
+: .75
+)
+){
+
+hitEnemy(
+e,
+bullet.d
+);
+
+
+if(
+bullet.p > 0
+){
+
+bullet.p--;
+
+}
+
+else{
+
+remove =
+true;
+
+}
+
+
+break;
+
+}
+
+}
+
+
+if(
+remove
+){
+
+scene.remove(
+bullet.mesh
+);
+
+
+shots.splice(
+
+shots.indexOf(
+bullet
+),
+
+1
+
+);
+
+}
+
+}
+
+
+/* enemy projectiles */
+
+for(
+const bullet of
+bad.slice()
+){
+
+bullet.mesh.position
+.addScaledVector(
+
+bullet.vel,
+
+dt
+
+);
+
+
+bullet.life -=
+dt;
+
+
+if(
+bullet.mesh.position
+.distanceTo(
+camera.position
+)
+<
+.55
+){
+
+hurt(
+bullet.d
+);
+
+
+bullet.life =
+0;
+
+}
+
+
+if(
+bullet.life <= 0
+){
+
+scene.remove(
+bullet.mesh
+);
+
+
+bad.splice(
+
+bad.indexOf(
+bullet
+),
+
+1
+
+);
+
+}
+
+}
+
+
+/* particle effects */
+
+for(
+const effect of
+fx.slice()
+){
+
+effect.life -=
+dt;
+
+
+effect.mesh.position
+.addScaledVector(
+
+effect.vel,
+
+dt
+
+);
+
+
+effect.mesh.material.opacity =
+effect.life /
+effect.max;
+
+
+if(
+effect.life <= 0
+){
+
+scene.remove(
+effect.mesh
+);
+
+
+fx.splice(
+
+fx.indexOf(
+effect
+),
+
+1
+
+);
+
+}
+
+}
+
+
+/* red damage vignette */
+
+damageFade *=
+.88;
+
+
+$("damage")
+.style.opacity =
+damageFade;
+
+
+/* boss health */
+
+if(
+boss
+){
+
+$("boss")
+.style.width =
+(
+boss.hp /
+boss.max *
+100
+)
++
+"%";
+
+}
+
+
+hud();
+
+}
+
+
+function hurt(
+damage
+){
+
+if(
+stats.inv > 0
+){
+
+return;
+
+}
+
+
+stats.hp -=
+damage;
+
+
+stats.inv =
+.6;
+
+
+damageFade =
+.85;
+
+
+if(
+stats.hp <= 0
+){
+
+gameOver();
+
+}
+
+}
+
+
+function burst(
+position,
+color,
+amount
+){
+
+for(
+let i=0;
+i<amount;
+i++
+){
+
+let mesh =
+new THREE.Mesh(
+
+new THREE.SphereGeometry(
+
+.04 +
+Math.random()*.07,
+
+5,
+5
+
+),
+
+new THREE.MeshBasicMaterial({
+
+color,
+
+transparent:true
+
+})
+
+);
+
+
+let velocity =
+new THREE.Vector3(
+
+Math.random()-.5,
+
+Math.random(),
+
+Math.random()-.5
+
+)
+.normalize()
+.multiplyScalar(
+
+2 +
+Math.random()*4
+
+);
+
+
+mesh.position.copy(
+position
+);
+
+
+scene.add(
+mesh
+);
+
+
+fx.push({
+
+mesh,
+
+vel:velocity,
+
+life:
+.5 +
+Math.random()*.3,
+
+max:.8
+
+});
+
+}
+
+}
+
+
+function hitMark(){
+
+let hit =
+$("hit");
+
+
+hit.style.opacity =
+1;
+
+
+setTimeout(
+() => {
+
+hit.style.opacity =
+0;
+
+},
+65
+);
+
+}
+
+
+function hud(){
+
+$("planet")
+.textContent =
+worlds[planet].name;
+
+
+$("wave")
+.textContent =
+wave;
+
+
+$("score")
+.textContent =
+score;
+
+
+$("level")
+.textContent =
+level;
+
+
+$("best")
+.textContent =
+best;
+
+
+$("hp")
+.style.width =
+(
+Math.max(
+0,
+stats.hp
+)
+/
+stats.max
+*
+100
+)
++
+"%";
+
+
+$("xp")
+.style.width =
+(
+xp /
+nextXp *
+100
+)
++
+"%";
+
+}
+
+
+function message(
+text
+){
+
+let message =
+$("msg");
+
+
+message.textContent =
+text;
+
+
+message.style.opacity =
+1;
+
+
+setTimeout(
+() => {
+
+message.style.opacity =
+0;
+
+},
+1500
+);
+
+}
+
+
+function gameOver(){
+
+state =
+"end";
+
+
+best =
+Math.max(
+best,
+score
+);
+
+
+localStorage.starfallFPSBest =
+best;
+
+
+$("endText")
+.textContent =
+
+`Score ${score} • ${worlds[planet].name} • Wave ${wave}`;
+
+
+$("end")
+.classList
+.remove(
+"hidden"
+);
+
+
+if(
+document.exitPointerLock
+){
+
+document.exitPointerLock();
+
+}
+
+}
+
+
+function showMenu(){
+
+state =
+"menu";
+
+
+document
+.querySelectorAll(
+".overlay"
+)
+.forEach(
+overlay =>
+overlay.classList.add(
+"hidden"
+)
+);
+
+
+$("menu")
+.classList
+.remove(
+"hidden"
+);
+
+
+if(
+document.exitPointerLock
+){
+
+document.exitPointerLock();
+
+}
+
+}
+function addInputs(){
+
+addEventListener(
+"keydown",
+e => {
+
+keys[
+e.key.toLowerCase()
+] = true;
+
+
+if(
+e.code ===
+"Space"
+){
+
+e.preventDefault();
+
+dodge();
+
+}
+
+
+if(
+e.key.toLowerCase() ===
+"e"
+){
+
+nova();
+
+}
+
+}
+);
+
+
+addEventListener(
+"keyup",
+e => {
+
+keys[
+e.key.toLowerCase()
+] = false;
+
+}
+);
+
+
+/* click the game to capture the mouse */
+
+renderer.domElement
+.addEventListener(
+"click",
+() => {
+
+if(
+state === "play" &&
+matchMedia(
+"(pointer:fine)"
+).matches
+){
+
+renderer
+.domElement
+.requestPointerLock();
+
+}
+
+}
+);
+
+
+/* check whether mouse is locked */
+
+document
+.addEventListener(
+"pointerlockchange",
+() => {
+
+locked =
+document.pointerLockElement ===
+renderer.domElement;
+
+}
+);
+
+
+/* desktop first-person mouse look */
+
+document
+.addEventListener(
+"mousemove",
+e => {
+
+if(
+locked
+){
+
+yaw -=
+e.movementX *
+.0022;
+
+
+pitch -=
+e.movementY *
+.0022;
+
+
+pitch =
+Math.max(
+
+-1.35,
+
+Math.min(
+1.35,
+pitch
+)
+
+);
+
+}
+
+}
+);
+
+
+/* desktop firing */
+
+addEventListener(
+"mousedown",
+e => {
+
+if(
+e.button === 0
+){
+
+firing =
+true;
+
+}
+
+}
+);
+
+
+addEventListener(
+"mouseup",
+e => {
+
+if(
+e.button === 0
+){
+
+firing =
+false;
+
+}
+
+}
+);
+
+
+/* resize handling */
+
+addEventListener(
+"resize",
+() => {
+
+camera.aspect =
+innerWidth /
+innerHeight;
+
+
+camera
+.updateProjectionMatrix();
+
+
+renderer.setSize(
+innerWidth,
+innerHeight
+);
+
+}
+);
+
+
+/* mobile movement joystick */
+
+stick(
+$("moveStick"),
+moving
+);
+
+
+/* mobile camera drag area */
+
+let look =
+$("lookPad");
+
+let lookId =
+null;
+
+let lastX =
+0;
+
+let lastY =
+0;
+
+
+look.addEventListener(
+"pointerdown",
+e => {
+
+lookId =
+e.pointerId;
+
+
+lastX =
+e.clientX;
+
+
+lastY =
+e.clientY;
+
+
+look.setPointerCapture(
+lookId
+);
+
+}
+);
+
+
+look.addEventListener(
+"pointermove",
+e => {
+
+if(
+e.pointerId !==
+lookId
+){
+
+return;
+
+}
+
+
+const deltaX =
+e.clientX -
+lastX;
+
+
+const deltaY =
+e.clientY -
+lastY;
+
+
+yaw -=
+deltaX *
+.004;
+
+
+pitch -=
+deltaY *
+.004;
+
+
+pitch =
+Math.max(
+
+-1.35,
+
+Math.min(
+1.35,
+pitch
+)
+
+);
+
+
+lastX =
+e.clientX;
+
+
+lastY =
+e.clientY;
+
+}
+);
+
+
+function endLook(
+e
+){
+
+if(
+e.pointerId !==
+lookId
+){
+
+return;
+
+}
+
+
+lookId =
+null;
+
+}
+
+
+look.addEventListener(
+"pointerup",
+endLook
+);
+
+
+look.addEventListener(
+"pointercancel",
+endLook
+);
+
+
+/* mobile fire */
+
+$("fireBtn")
+.addEventListener(
+"pointerdown",
+e => {
+
+e.preventDefault();
+
+firing =
+true;
+
+}
+);
+
+
+$("fireBtn")
+.addEventListener(
+"pointerup",
+e => {
+
+e.preventDefault();
+
+firing =
+false;
+
+}
+);
+
+
+$("fireBtn")
+.addEventListener(
+"pointercancel",
+() => {
+
+firing =
+false;
+
+}
+);
+
+
+/* mobile dodge */
+
+$("dodgeBtn")
+.addEventListener(
+"pointerdown",
+e => {
+
+e.preventDefault();
+
+dodge();
+
+}
+);
+
+
+/* mobile Nova */
+
+$("abilityBtn")
+.addEventListener(
+"pointerdown",
+e => {
+
+e.preventDefault();
+
+nova();
+
+}
+);
+
+}
+
+
+function stick(
+element,
+output
+){
+
+let pointerId =
+null;
+
+let rectangle;
+
+
+function moveStick(
+e
+){
+
+let x =
+e.clientX -
+(
+rectangle.left +
+rectangle.width/2
+);
+
+
+let y =
+e.clientY -
+(
+rectangle.top +
+rectangle.height/2
+);
+
+
+const maximum =
+rectangle.width *
+.32;
+
+
+const length =
+Math.hypot(
+x,
+y
+)
+||
+1;
+
+
+if(
+length > maximum
+){
+
+x =
+x /
+length *
+maximum;
+
+
+y =
+y /
+length *
+maximum;
+
+}
+
+
+output.x =
+x /
+maximum;
+
+
+output.y =
+y /
+maximum;
+
+
+element.style
+.setProperty(
+"--x",
+x+"px"
+);
+
+
+element.style
+.setProperty(
+"--y",
+y+"px"
+);
+
+}
+
+
+element
+.addEventListener(
+"pointerdown",
+e => {
+
+pointerId =
+e.pointerId;
+
+
+rectangle =
+element
+.getBoundingClientRect();
+
+
+element
+.setPointerCapture(
+pointerId
+);
+
+
+moveStick(
+e
+);
+
+}
+);
+
+
+element
+.addEventListener(
+"pointermove",
+e => {
+
+if(
+e.pointerId ===
+pointerId
+){
+
+moveStick(
+e
+);
+
+}
+
+}
+);
+
+
+function endStick(
+e
+){
+
+if(
+e.pointerId !==
+pointerId
+){
+
+return;
+
+}
+
+
+pointerId =
+null;
+
+
+output.x =
+0;
+
+
+output.y =
+0;
+
+
+element.style
+.setProperty(
+"--x",
+"0px"
+);
+
+
+element.style
+.setProperty(
+"--y",
+"0px"
+);
+
+}
+
+
+element
+.addEventListener(
+"pointerup",
+endStick
+);
+
+
+element
+.addEventListener(
+"pointercancel",
+endStick
+);
+
+}
+
+
+function animate(){
+
+requestAnimationFrame(
+animate
+);
+
+
+const delta =
+Math.min(
+
+.033,
+
+clock.getDelta()
+
+);
+
+
+update(
+delta
+);
+
+
+renderer.render(
+scene,
+camera
+);
+
+}
+
+
+/* expose menu functions to HTML buttons */
+
+window.startGame =
+startGame;
+
+
+window.showMenu =
+showMenu;
+
+
+/* start engine */
+
+init();
+
+hud();
+
+</script>
+
+</body>
+</html>
